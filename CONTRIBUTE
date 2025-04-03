@@ -1,0 +1,40 @@
+# How to contribute to the project
+Fork the repository under your namespace (by clicking the fork button on the top right).
+Clone the forked repository to your local machine and create a virtual environment by running the following command:
+```bash
+python3 -m venv env
+```
+Activate the virtual environment by running the following command:
+```bash
+source env/bin/activate
+```
+
+Install the global and dev dependencies by running the following command:
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+```
+Setup pre-commit hooks by running the following command:
+```bash
+pre-commit install
+```
+
+Make your modifications in your local repository. Don't forget to run the tests before committing your changes by running the following command:
+
+```bash
+python manage.py test
+```
+
+Commit your changes with a descriptive message (you could link the issue you are working on for example using `#<issue_number>` in the commit message). Then push your changes to your forked repository. 
+
+Once you are done with your changes, you can create a pull request to the main repository. To do this, follow these steps:
+* Go to the main repository and click on the "Pull requests" tab
+* Click on the "New pull request" button
+* Select the branch you want to merge into (usually `develop`)
+* Select the branch you want to merge from (your forked repository)
+* Add a title and description for your pull request
+* Assign the pull request to the appropriate person (usually the maintainer of the repository)
+* Add any relevant labels or milestones
+* Click on the "Create pull request" button
+* Wait for the maintainer to review your pull request and make any necessary changes
+* Once the pull request is approved, it will be merged into the main repository
+
