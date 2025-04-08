@@ -17,7 +17,8 @@ import os
 
 env = environ.Env(
     # set casting, default value
-    DJANGO_DEBUG=(bool, False)
+    DJANGO_DEBUG=(bool, False),
+    ALLOW_REGISTRATION=(bool, False),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -111,6 +112,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = "accounts.User"
+
+ALLOW_REGISTRATION = env("ALLOW_REGISTRATION")
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

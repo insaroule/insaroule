@@ -1,5 +1,9 @@
-<form action="" method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">S'enregistrer</button>
-</form>
+{% if not_allowed %}
+    <p>Les inscriptions sont désactivées.</p>
+{% else %}
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">S'enregistrer</button>
+    </form>
+{% endif %}
