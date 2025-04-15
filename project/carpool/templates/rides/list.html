@@ -1,0 +1,8 @@
+<h3>Trajets</h3>
+
+<ul>
+    {% for ride in rides %}
+    <li>{{ ride.driver }} - {{ ride.start_dt }} | {{ ride.end_dt }}</li>
+    {% endfor %}
+</ul>
+    
