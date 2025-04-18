@@ -10,6 +10,11 @@ class RegisterForm(UserCreationForm):
         model = User
         fields = ["username", "email", "password1", "password2"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _field_name, field in self.fields.items():
+            field.widget.attrs.update({"class": "form-control"})
+
     def clean_email(self):
         email = self.cleaned_data["email"]
         email_check = User.objects.filter(email=email)
