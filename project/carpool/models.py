@@ -1,8 +1,24 @@
 from django.db import models
 
 
+class Localisation(models.Model):
+    lat = models.FloatField()
+    lng = models.FloatField()
+
+
+class Step(models.Model):
+    name = models.TextField()
+    loc = models.ForeignKey(Localisation, on_delete=models.CASCADE)
+
+
 class Ride(models.Model):
     driver = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
+    rider = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
     start_dt = models.DateTimeField()
     end_dt = models.DateTimeField()
+    start_loc = models.ForeignKey(Localisation, on_delete=models.CASCADE)
+    end_loc = models.ForeignKey(Localisation, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
+    payment_method = models.CharField(max_length=20)
+    price = models.FloatField()
     comment = models.TextField()
