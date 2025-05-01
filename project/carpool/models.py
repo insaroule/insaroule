@@ -22,3 +22,8 @@ class Ride(models.Model):
     payment_method = models.CharField(max_length=20)
     price = models.FloatField()
     comment = models.TextField()
+
+class Vehicle(models.Model):
+    name = models.CharField(max_length=50)
+    seats = models.PositiveIntegerField()
+    color = models.CharField(max_length=50)
