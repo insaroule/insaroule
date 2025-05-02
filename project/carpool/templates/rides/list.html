@@ -1,8 +1,126 @@
-<h3>Trajets</h3>
 
-<ul>
-    {% for ride in rides %}
-    <li>{{ ride.driver }} - {{ ride.start_dt }} | {{ ride.end_dt }}</li>
-    {% endfor %}
-</ul>
-    
+{% extends 'base.html' %}
+
+{% block content %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">INSA'Roule</a>
+      <div class="d-flex ms-auto">
+        {% if user.is_authenticated %}
+          <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Se déconnecter</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-primary">Se connecter</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+<div class="container mt-5">
+    <div class="container mb-5">
+        <div class="card shadow p-4">
+            <form method="get" action="/rechercher-trajets/">
+                <div class="row g-3 align-items-center">
+                    <!-- Ville de départ -->
+                    <div class="col-md-3">
+                        <label for="depart" class="form-label">Départ</label>
+                        <input type="text" id="depart" name="depart" class="form-control" placeholder="Ville de départ" required>
+                    </div>
+
+                    <!-- Ville d'arrivée -->
+                    <div class="col-md-3">
+                        <label for="arrivee" class="form-label">Arrivée</label>
+                        <input type="text" id="arrivee" name="arrivee" class="form-control" placeholder="Ville d'arrivée" required>
+                    </div>
+
+                    <!-- Date du voyage -->
+                    <div class="col-md-2">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" id="date" name="date" class="form-control" required>
+                    </div>
+
+                    <!-- Nombre de passagers -->
+                    <div class="col-md-2">
+                        <label for="passagers" class="form-label">Passagers</label>
+                        <input type="number" id="passagers" name="passagers" class="form-control" min="1" value="1" required>
+                    </div>
+
+                    <!-- Bouton de validation -->
+                    <div class="col-md-2 d-grid align-self-end">
+                        <button type="submit" class="btn btn-primary">Rechercher</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="container mt-5">
+        <div class="container mb-5">
+            <div class="text-center">
+            <h1 class="mb-4">Trajets disponibles</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="ms-2">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">Trier par</h4>
+                        <form method="get">
+                            <div class="mb-3">
+                                <select name="sort" class="form-select" onchange="this.form.submit()">
+                                    <option value="">-- Choisir --</option>
+                                    <option value="price" {% if request.GET.sort == "price" %}selected{% endif %}>Prix croissant</option>
+                                    <option value="-price" {% if request.GET.sort == "-price" %}selected{% endif %}>Prix décroissant</option>
+                                    <option value="start_dt" {% if request.GET.sort == "start_dt" %}selected{% endif %}>Date de départ</option>
+                                    <option value="end_dt" {% if request.GET.sort == "end_dt" %}selected{% endif %}>Date d'arrivée</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            {% if rides %}
+                {% for ride in rides %}
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h5 class="card-title">
+                                        {{ ride.start_loc.lat }}, {{ ride.start_loc.lng }} → {{ ride.end_loc.lat }}, {{ ride.end_loc.lng }} 
+                                        
+                                    </h5>
+                                    <p class="card-text mb-1">
+                                        Départ : {{ ride.start_dt|date:"d/m/Y H:i" }}
+                                        
+                                        Arrivée : {{ ride.end_dt|date:"d/m/Y H:i" }}
+                                    </p>
+                                    
+                                    <p class="mb-0">Conducteur : {{ ride.driver.first_name }} {{ ride.driver.last_name }}</p>
+                                    <p class="mb-0">Véhicule : {{ ride.vehicle.name }}</p>
+                                    <p class="mb-0">Nombre de places restantes : {{ ride.vehicle.seats }} </p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="mb-0">Étape : {{ ride.step.name }}</p>
+                                </div>
+                                <div class="text-end">
+                                    <h2 class="text-primary">{{ ride.price }} €</h2>
+                                    <p class="text-muted small mb-0">
+                                        Durée : {{ ride.end_dt|add:"-start_dt" }}  <!-- Calcul de la durée -->
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    Aucun trajet trouvé, pensez à prendre le train : )
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
