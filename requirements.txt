@@ -2,3 +2,6 @@ django
 django-environ
 celery[redis]
 requests
+uvicorn[standard]
+channels
+channels-redis
