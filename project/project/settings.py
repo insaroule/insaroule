@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "accounts",
     "carpool",
 ]
@@ -83,6 +84,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "project.wsgi.application"
+ASGI_APPLICATION = "project.asgi.application"
 
 
 # Database
@@ -145,7 +147,12 @@ LOCALE_PATHS = [
 
 STATIC_URL = "static/"
 
-STATIC_ROOT = BASE_DIR / "static"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -182,3 +189,13 @@ CELERY_RESULT_SERIALIZER = "json"
 # Tasks rate limit
 GEOCODAGE_TASK_RATE_LIMIT = env("GEOCODAGE_TASK_RATE_LIMIT", default="50/s")
 ROUTING_TASK_RATE_LIMIT = env("ROUTING_TASK_RATE_LIMIT", default="5/s")
+
+# Channels settings
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # ensure Redis is running
+        },
+    },
+}

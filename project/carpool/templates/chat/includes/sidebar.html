@@ -1,0 +1,93 @@
+{% load duration %}
+<style>
+    .circle {
+        width: 10px;
+        height: 10px;
+        border: 2px solid black;
+        border-radius: 50%;
+        background-color: white;
+        align-self: center;
+        flex-shrink: 0;
+    }
+
+    .line {
+        background-color: #1b1b1b;
+        flex: 1;
+        border-radius: 2px;
+        align-self: center;
+        margin: 2px 0;
+        width: 4px;
+    }
+</style>
+
+
+<div class="list-group mb-3">
+    <span class="list-group-item text-bg-light">Ride Requests</span>
+    {% for jr in outgoing_requests %}
+    <a href="{% url 'chat:room' jr.pk %}" class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between">
+            <div class="d-grid">
+                <div class="d-flex flex-row">
+                    <div class="d-flex flex-column mx-1 my-1">
+                        <div class="circle"></div>
+                        <div class="line"></div>
+                        <div class="circle"></div>
+                    </div>
+                    <div class="d-flex flex-column ms-2">
+                        <span>{{ jr.ride.start_loc.city|truncatechars:20 }}</span>
+                        <span class="h-100"></span>
+                        <span>{{ jr.ride.end_loc.city|truncatechars:20 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-column align-items-end">
+                <span>{{ jr.ride.start_dt|date:"d/m/Y" }}</span>
+                <span>{{ jr.ride.driver.username|truncatechars:16 }}</span>
+            </div>
+        </div>
+    </a>
+    {% empty %}
+    <a href="{% url 'carpool:list' %}" class="list-group-item list-group-item-action">
+        <div class="d-flex flex-column align-items-center">
+            <span class="text-muted mb-2 small">No ride requests found</span>
+            <span type="button" class="btn btn-sm btn-outline-primary">Search a ride</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+
+<div class="list-group">
+    <span class="list-group-item text-bg-light">Incoming requests</span>
+    {% for jr in incoming_requests %}
+    <a href="{% url 'chat:room' jr.pk %}" class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between">
+            <div class="d-grid">
+                <div class="d-flex flex-row">
+                    <div class="d-flex flex-column mx-1 my-1">
+                        <div class="circle"></div>
+                        <div class="line"></div>
+                        <div class="circle"></div>
+                    </div>
+                    <div class="d-flex flex-column ms-2">
+                        <span>{{ jr.ride.start_loc.city|truncatechars:20 }}</span>
+                        <span class="h-100"></span>
+                        <span>{{ jr.ride.end_loc.city|truncatechars:20 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-column align-items-end">
+                <span>{{ jr.ride.start_dt|date:"d/m/Y" }}</span>
+                <span>{{ jr.user.username|truncatechars:16 }}</span>
+            </div>
+        </div>
+    </a>
+    {% empty %}
+
+    <span class="list-group-item text-muted text-center small">
+        Nobody has requested to join your rides yet.
+
+    </span>
+
+    {% endfor %}
+</div>

@@ -124,10 +124,12 @@
                         </div>
                     </div>
                 </div>
-                <form action="" method="post">
+                {% if not ride.driver == user %}
+                <form action="{% url 'carpool:subscribe' ride.pk %}" method="post">
                     {% csrf_token %}
                     <button class="btn btn-primary w-100" type="submit">Subscribe</button>
                 </form>
+                {% endif %}
             </div>
         </div>
     {% endblock %}

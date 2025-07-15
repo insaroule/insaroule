@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load duration %}
+
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<div class="container-fluid mt-3">
+    {{ join_request.pk|json_script:'room-name' }}
+    {{ with_user.pk|json_script:'with-user' }}
+
+    <h1>Messages</h1>
+    <div class="row h-100">
+        <div class="col-lg-3 h-100 mb-3 mb-lg-0">
+            {% include "chat/includes/sidebar.html" %}
+        </div>
+        <div class="col-lg-6">
+            <div class="card" style="min-height: 80vh;">
+                <div class="card-header d-flex justify-content-between">
+                    <span>{{ join_request.ride.start_dt }} ({{ join_request.ride.start_loc.city }} &RightArrow;
+                    {{ join_request.ride.end_loc.city }})</span>
+                    <div class="dropdown ms-auto">
+                        <i class="bi bi-three-dots-vertical" data-bs-toggle="dropdown" aria-expanded="false"></i>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    Report the conversation
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="text-center small text-body-secondary my-2">
+                        Nous pouvons modérer les messages si nécessaire.
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                            <path
+                                d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2" />
+                        </svg>
+                    </div>
+
+                    <div id="chat-log" class="p-3 d-flex flex-column gap-2" style="max-height: 65vh; overflow-y: auto;"></div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="input-group input-group">
+                        <input type="text" id="chat-message-input" class="form-control"
+                            placeholder="Écrivez votre message ici...">
+                        <input type="button" class="btn btn-primary" value="Send" id="chat-message-submit">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 h-100 mb-3 mb-lg-0">
+            <div class="card h-100 mb-3">
+                <div class="card-body">
+                    <div class="d-flex flex-row gap-3">
+                        <img src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+                            class="rounded-circle" width="70" />
+                        <div class="d-flex flex-column">
+                            <span class="fs-4">
+
+                                {{ with_user.username }}
+                            </span>
+                            <span class="small text-muted d-block mb-2 d-flex justify-content-center">
+                                {% if shared_ride_count == 0 %}
+                                You have never ride with this user.
+                                {% else %}
+                                You have already shared {{ shared_ride_count }} ride{{ shared_ride_count|pluralize }}
+                                with this user.
+                                {% endif %}
+                            </span>
+
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="d-flex justify-content-between">
+                        <div class="d-grid">
+                            <div class="d-flex flex-row">
+                                <div class="d-flex flex-column me-2 gap-1">
+                                    <span class="fw-semibold">{{ join_request.ride.start_dt|date:"H:i" }}</span>
+                                    <span class="text-muted small text-end">{{ join_request.ride.duration|duration }}</span>
+                                    <span class="fw-semibold">{{ join_request.ride.end_dt|date:"H:i" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mx-1 my-1">
+                                    <div class="circle"></div>
+                                    <div class="line"></div>
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="d-flex flex-column ms-2">
+                                    <span>{{ join_request.ride.start_loc.city }}</span>
+                                    <span class="h-100"></span>
+                                    <span>{{ join_request.ride.end_loc.city }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            <span>{{ join_request.ride.start_dt|date:"d/m/Y" }}</span>
+                            
+                            {%  if join_request.status == "DECLINED" %}
+                            <span class="badge text-bg-danger">
+                                {{ join_request.get_status_display }}
+                            </span>
+                            {%  elif join_request.status == "ACCEPTED" %}
+                            <span class="badge text-bg-success">
+                                {{ join_request.get_status_display }}
+                            </span>
+                            {%  elif join_request.status == "PENDING" %}
+                            <span class="badge text-bg-secondary">
+                                {{ join_request.get_status_display }}
+                            </span>
+                            {%  endif %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <div class="card">
+                <div class="card-body">
+                    <span class="mb-3">
+                        You have the possibility to accept or decline the request made by this user.
+                        When declining, the user won't be able to send you a request for this ride anymore.
+                    </span>
+                    <form action="{% url 'carpool:change_jr_status' join_request.pk %}" method="post">
+                        {% csrf_token %}
+                        <select name="action" id="" class="form-select mt-3">
+                            <option value="decline">Decline</option>
+                            <option value="accept">Accept</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+                    </form>
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+
+
+    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+    const withUser = JSON.parse(document.getElementById('with-user').textContent);
+
+    const chatSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/chat/'
+        + roomName
+        + '/'
+    );
+
+    chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const chatLog = document.querySelector('#chat-log');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `d-flex ${data.dir === 'out' ? 'justify-content-end' : 'justify-content-start'}`;
+
+        const card = document.createElement('div');
+        card.className = `card ${data.dir === 'out' ? 'bg-primary text-white' : 'bg-light'}`;
+        card.style.maxWidth = '75%';
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body py-2 px-3';
+
+        const messageText = document.createElement('p');
+        messageText.className = 'mb-1';
+        messageText.textContent = data.message;
+
+        const timestamp = document.createElement('div');
+        timestamp.className = `text-end small ${data.dir === 'out' ? 'text-light' : 'text-muted'}`;
+        timestamp.textContent = new Date(data.timestamp).toLocaleString();
+
+        cardBody.appendChild(messageText);
+        cardBody.appendChild(timestamp);
+        card.appendChild(cardBody);
+        wrapper.appendChild(card);
+
+        chatLog.appendChild(wrapper);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+    chatSocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#chat-message-input').focus();
+    document.querySelector('#chat-message-input').onkeyup = function (e) {
+        if (e.key === 'Enter') {  // enter, return
+            document.querySelector('#chat-message-submit').click();
+        }
+    };
+
+    document.querySelector('#chat-message-submit').onclick = function (e) {
+        const messageInputDom = document.querySelector('#chat-message-input');
+        if (messageInputDom.value === '') {
+            return;  // Do not send empty messages
+        }
+        const message = messageInputDom.value;
+        chatSocket.send(JSON.stringify({
+            'message': message,
+            'from': '{{ request.user.pk }}'
+        }));
+        messageInputDom.value = '';
+    };
+</script>
+{% endblock content %}

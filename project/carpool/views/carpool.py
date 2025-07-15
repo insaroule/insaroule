@@ -13,6 +13,15 @@ from django.core.paginator import Paginator
 
 
 @login_required
+def rides_subscribe(request, pk):
+    ride = get_object_or_404(Ride, pk=pk)
+    if request.method == "POST":
+        ride.join_requests.create(user=request.user)
+        return redirect("chat:index")
+    return redirect("carpool:detail", pk=ride.pk)
+
+
+@login_required
 def rides_detail(request, pk):
     ride = get_object_or_404(Ride, pk=pk)
     context = {
