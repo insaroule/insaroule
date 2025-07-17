@@ -6,8 +6,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls", namespace="accounts")),
-    path("", include("carpool.urls.carpool", namespace="carpool")),
-    path("chat/", include("carpool.urls.chat", namespace="chat")),
+    path("", include("carpool.urls", namespace="carpool")),
+    path("chat/", include("chat.urls", namespace="chat")),
 ]
 
 if settings.DEBUG:

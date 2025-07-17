@@ -6,14 +6,14 @@ from asgiref.sync import sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        from carpool.models import ChatMessages, JoinRequest
+        from chat.models import ChatMessage, ChatRequest
 
         self.user = self.scope["user"]
         self.room_name = self.scope["url_route"]["kwargs"]["jr_pk"]
         self.room_group_name = f"chat_{self.room_name}"
 
         # Fetch the JoinRequest instance
-        self.join_request = await sync_to_async(JoinRequest.objects.get)(
+        self.join_request = await sync_to_async(ChatRequest.objects.get)(
             pk=self.room_name
         )
 
@@ -21,7 +21,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         previous_messages = await sync_to_async(list)(
-            ChatMessages.objects.filter(join_request=self.join_request)
+            ChatMessage.objects.filter(join_request=self.join_request)
             .select_related("sender")
             .order_by("timestamp")[:50]
             .values("sender__username", "content", "timestamp")
@@ -43,13 +43,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        from carpool.models import ChatMessages
+        from chat.models import ChatMessage
 
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
         timestamp = timezone.now()
 
-        await ChatMessages.objects.acreate(
+        await ChatMessage.objects.acreate(
             join_request=self.join_request,
             sender=self.user,
             content=message,

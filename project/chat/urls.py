@@ -1,5 +1,5 @@
 from django.urls import path
-from carpool.views.chat import index, room
+from chat.views import index, room
 
 
 app_name = "chat"

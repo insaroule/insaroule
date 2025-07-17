@@ -1,12 +1,10 @@
 from django.contrib import admin
-from carpool.models import Ride, Vehicle, Location, Step, JoinRequest, ChatMessages
+from carpool.models import Ride, Vehicle, Location, Step
 
 
 admin.site.register(Vehicle)
 admin.site.register(Location)
 admin.site.register(Step)
-admin.site.register(JoinRequest)
-admin.site.register(ChatMessages)
 
 
 @admin.register(Ride)
