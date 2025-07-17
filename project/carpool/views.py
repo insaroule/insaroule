@@ -1,7 +1,8 @@
 import datetime
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from carpool.models import Ride, Location
+from carpool.models import Location
+from carpool.models.ride import Ride
 from django.contrib.auth.decorators import login_required
 from carpool.forms import CreateRideForm
 from carpool.tasks import get_autocompletion, get_routing

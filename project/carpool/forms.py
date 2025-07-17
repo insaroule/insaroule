@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from carpool.models import Ride
+from carpool.models.ride import Ride
 
 
 class CreateRideForm(forms.Form):

@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
-from carpool.models import Ride
+from carpool.models.ride import Ride
 from chat.models import ChatRequest
 from django.http import HttpResponse
 
