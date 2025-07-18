@@ -14,30 +14,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope["url_route"]["kwargs"]["jr_pk"]
         self.room_group_name = f"chat_{self.room_name}"
 
-        if self.user.is_anonymous:
-            logging.warning(
-                f"Anonymous user attempted to connect to chat room {self.room_name}."
-            )
-            await self.close()
-            return
-
         self.chat_request = await sync_to_async(ChatRequest.objects.get)(
             pk=self.room_name
         )
 
-        # Check permissions
         is_participant = await sync_to_async(
             lambda: self.user in [self.chat_request.user, self.chat_request.ride.driver]
         )()
-        is_moderator = (
-            await sync_to_async(self.user.has_perm)("chat.can_moderate_messages")
-            or self.user.is_staff
+
+        is_moderator = await sync_to_async(self.user.has_perm)(
+            "chat.can_moderate_messages"
         )
 
-        if not is_participant and not is_moderator:
-            logging.warning(
-                f"User {self.user.username} attempted to access chat room {self.room_name} without permission."
-            )
+        if self.user.is_anonymous or not is_participant and not is_moderator:
             await self.close()
             return
 
@@ -71,6 +60,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.send(
                     text_data=json.dumps(
                         {
+                            "type": "chat.message",
                             "id": message["pk"],
                             "message": "This message has been removed."
                             if message["hidden"]
@@ -117,10 +107,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(self.room_group_name, data)
 
         elif "action" in text_data:
-            if (
-                not self.user.has_perm("chat.can_moderate_messages")
-                and not self.user.is_staff
-            ):
+            if not self.user.has_perm("chat.can_moderate_messages"):
                 logging.warning(
                     f"User {self.user.username} attempted to perform moderation action without permission."
                 )
@@ -134,7 +121,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     ChatMessage.objects.filter(pk=message_id).update
                 )(hidden=True)
 
-                # Notify the group about the hidden message
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
@@ -149,7 +135,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     ChatMessage.objects.filter(pk=message_id).update
                 )(hidden=False)
 
-                # Notify the group about the unhidden message
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {

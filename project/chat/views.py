@@ -3,8 +3,10 @@ from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from carpool.models.ride import Ride
-from chat.models import ChatRequest, ChatReport, ChatMessage
+from accounts.models import User
+from chat.models import ChatRequest, ChatReport, ModAction, ChatMessage
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 
 
@@ -20,6 +22,25 @@ def report(request, jr_pk):
             reason=request.POST.get("reason", ""),
         )
     return redirect("chat:room", jr_pk=jr_pk)
+
+
+@permission_required("chat.can_moderate_messages", raise_exception=True)
+@require_http_methods(["POST"])
+def user_report(request, user_pk):
+    user = get_object_or_404(User, pk=user_pk)
+    join_request = get_object_or_404(
+        ChatRequest, pk=request.POST.get("join_request_id")
+    )
+
+    # Handle the user report submission
+    ModAction.objects.create(
+        performed_by=request.user,
+        action=ModAction.Action.FLAG_USER,
+        reason=request.POST.get("reason", ""),
+        on_user=user,
+    )
+
+    return redirect("chat:mod_room", jr_pk=join_request.pk)
 
 
 @permission_required("chat.can_moderate_messages", raise_exception=True)

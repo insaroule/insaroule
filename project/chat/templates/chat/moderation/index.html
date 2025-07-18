@@ -22,7 +22,7 @@
             {% for chat in page_obj %}
             <tr>
                 <th scope="row">{{ forloop.counter }}</th>
-                <td><a href="{% url 'chat:moderation_room' chat.uuid %}">{{ chat.uuid }}</a></td>
+                <td><a href="{% url 'chat:mod_room' chat.uuid %}">{{ chat.uuid }}</a></td>
                 <td>{{ chat.reports.exists }}</td>
             </tr>
             {% empty %}

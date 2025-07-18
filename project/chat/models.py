@@ -102,3 +102,41 @@ class ChatReport(models.Model):
 
     def __str__(self):
         return f"ChatReport({self.chat_request.uuid} by {self.reported_by.username})"
+
+
+class ModAction(models.Model):
+    class Action(models.TextChoices):
+        FLAG_USER = "FLAG_USER", _("Flag User")  # Add a flag action
+        BLOCK_USER = "BLOCK_USER", _("Block User")  # Block a user
+
+    performed_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="mod_actions",
+        verbose_name=_("performed by"),
+    )
+
+    on_user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="mod_actions_on_user",
+        verbose_name=_("on user"),
+        blank=True,
+        null=True,
+    )
+
+    reason = models.TextField(
+        verbose_name=_("reason"),
+        help_text=_("Reason for the moderation action"),
+        blank=True,
+        null=True,
+    )
+
+    action = models.CharField(
+        max_length=20,
+        choices=Action.choices,
+        verbose_name=_("action"),
+        help_text=_("The type of moderation action performed"),
+    )
+
+    timestamp = models.DateTimeField(auto_now_add=True)

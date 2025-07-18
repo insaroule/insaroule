@@ -33,13 +33,6 @@
                     <div id="chat-log" class="p-3 d-flex flex-column gap-2" style="max-height: 65vh; overflow-y: auto;">
                     </div>
                 </div>
-                <div class="card-footer bg-white">
-                    <div class="input-group input-group">
-                        <input type="text" id="chat-message-input" class="form-control"
-                            placeholder="Écrivez votre message ici...">
-                        <input type="button" class="btn btn-primary" value="Send" id="chat-message-submit">
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -50,21 +43,6 @@
 </div>
 
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
 
     const roomName = JSON.parse(document.getElementById('room-name').textContent);
     const currentUserUuid = JSON.parse(document.getElementById('current-user-uuid').textContent);
@@ -77,7 +55,6 @@
     const requester = JSON.parse(document.getElementById('requester-uuid').textContent);
 
     const requesterColor = "#f5f5dc";
-    const csrftoken = getCookie('csrftoken');
     const driverColor = "#92b389";
 
 
@@ -86,7 +63,9 @@
     function hideMessage(messageId) {
         // Hide the message element
         const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
-        messageEl.querySelector('.card-body p').textContent = "***";
+        // Add <s></s> tags around the message text
+        messageEl.dataset.originalMessage = messageEl.querySelector('.card-body p').textContent;
+        messageEl.querySelector('.card-body p').innerHTML = "<s>" + messageEl.dataset.originalMessage + "</s>";
         // Switch the button to unhide
         const messageFooter = messageEl.querySelector('#message-footer-' + messageId);
         messageFooter.innerHTML = `
@@ -114,15 +93,17 @@
     function handleMessage(msg) {
         const chatLog = document.querySelector('#chat-log');
 
-        const isCurrentUser = msg.user_uuid === currentUserUuid;
         const wrapper = document.createElement('div');
-        wrapper.className = `d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
+        if (msg.user_uuid === driver) {
+            wrapper.className = 'd-flex justify-content-start';
+        } else {
+            wrapper.className = 'd-flex justify-content-end';
+        }
+        // wrapper.className = `d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
 
         const card = document.createElement('div');
 
-        if (isCurrentUser) {
-            card.className = `card bg-primary text-white`;
-        } else if (msg.user_uuid === driver) {
+        if (msg.user_uuid === driver) {
             card.className = `card text-dark`;
             card.style.backgroundColor = driverColor;
         } else if (msg.user_uuid === requester) {
@@ -143,34 +124,34 @@
         if (!msg.hidden) {
             messageText.textContent = msg.message;
         } else {
-            messageText.textContent = "***";
+            // add <s></s> tags around the message text
+            messageText.innerHTML = "<s>" + msg.message + "</s>";
         }
 
         cardBody.appendChild(messageText);
         card.appendChild(cardBody);
         wrapper.appendChild(card);
-        // Display the hide button when message does not come from the current user
-        if (!isCurrentUser) {
-            cardBody.className = "card-body py-2 px-3"
+    
+        cardBody.className = "card-body py-2 px-3"
 
-            const messageFooter = document.createElement('div');
-            messageFooter.id = `message-footer-${msg.id}`;
-            messageFooter.className = 'd-flex justify-content-between align-items-center';
-            if (!msg.hidden) {
-                messageFooter.innerHTML = `
-                    <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'hide', message_id: ${msg.id} }));">
-                        <i class="bi bi-eye"></i> Hide
-                    </button>
-                `;
-            } else {
-                messageFooter.innerHTML = `
-                    <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'unhide', message_id: ${msg.id} }));">
-                        <i class="bi bi-eye-slash"></i> Unhide
-                    </button>
-                `;
-            }
-            card.appendChild(messageFooter);
+        const messageFooter = document.createElement('div');
+        messageFooter.id = `message-footer-${msg.id}`;
+        messageFooter.className = 'd-flex justify-content-between align-items-center';
+        if (!msg.hidden) {
+            messageFooter.innerHTML = `
+                <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'hide', message_id: ${msg.id} }));">
+                    <i class="bi bi-eye"></i> Hide
+                </button>
+            `;
+        } else {
+            messageFooter.innerHTML = `
+                <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'unhide', message_id: ${msg.id} }));">
+                    <i class="bi bi-eye-slash"></i> Unhide
+                </button>
+            `;
         }
+        card.appendChild(messageFooter);
+    
         
 
         chatLog.appendChild(wrapper);
@@ -191,14 +172,10 @@
 
     chatSocket.onmessage = function (e) {
         const msg = JSON.parse(e.data);
-        console.log(msg);
 
         if (msg.type === 'chat.action') {
-            // If another moderator hides or unhides a message, we want to see
-            // the change immediately without needing to refresh.
             handleAction(msg);
             return;
-
         }
 
         if (msg.type === 'chat.message') {
@@ -209,16 +186,6 @@
 
     chatSocket.onclose = function (e) {
         console.error('Chat socket closed unexpectedly');
-    };
-
-    // Send message when the submit button is clicked
-    document.querySelector('#chat-message-submit').onclick = function (e) {
-        const messageInputDom = document.querySelector('#chat-message-input');
-        const message = messageInputDom.value.trim();
-        if (message === '') return;
-
-        chatSocket.send(JSON.stringify({ message }));
-        messageInputDom.value = '';
     };
 </script>
 {% endblock content %}

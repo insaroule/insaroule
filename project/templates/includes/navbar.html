@@ -18,8 +18,8 @@
                 </li>
                 {% if perms.chat.can_moderate_messages %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'moderation_center' %}active{% endif %}" 
-                    {% if request.resolver_match.url_name == 'moderation_center' %}aria-current="page"{% endif %} href="{% url 'chat:moderation_center' %}">{% translate "Moderation" %}</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'mod_index' %}active{% endif %}" 
+                    {% if request.resolver_match.url_name == 'mod_index' %}aria-current="page"{% endif %} href="{% url 'chat:mod_index' %}">{% translate "Moderation" %}</a>
                 </li>
                 {% endif %}
             </ul>

@@ -136,28 +136,53 @@
         'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
     );
 
-    chatSocket.onmessage = function (e) {
-        const data = JSON.parse(e.data);
+        function hideMessage(messageId) {
+        // Hide the message element
+        const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
+        messageEl.querySelector('.card-body p').textContent = "This message has been removed.";
+    }
+
+    function unhideMessage(messageId) {
+        
+        const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
+        const messageText = messageEl.querySelector('.card-body p');
+        messageText.textContent = "Refresh the page to see the original message.";
+    }
+
+
+    function handleAction(msg) {
+        const action = msg.action;
+        const messageId = msg.message_id;
+
+        if (action === 'hide') {
+            hideMessage(messageId);
+        } else if (action === 'unhide') {
+            unhideMessage(messageId);
+        }
+    }
+
+    function handleMessage(msg) {
         const chatLog = document.querySelector('#chat-log');
 
-        const isCurrentUser = data.user_uuid === currentUserUuid;
+        const isCurrentUser = msg.user_uuid === currentUserUuid;
         const wrapper = document.createElement('div');
         wrapper.className = `d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
 
         const card = document.createElement('div');
         card.className = `card ${isCurrentUser ? 'bg-primary text-white' : 'bg-light'}`;
         card.style.maxWidth = '75%';
+        card.dataset.messageId = msg.id;
 
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body py-2 px-3';
 
         const messageText = document.createElement('p');
         messageText.className = 'mb-1';
-        messageText.textContent = data.message;
+        messageText.textContent = msg.message;
 
         const timestamp = document.createElement('div');
         timestamp.className = `text-end small ${isCurrentUser ? 'text-light' : 'text-muted'}`;
-        timestamp.textContent = new Date(data.timestamp).toLocaleString();
+        timestamp.textContent = new Date(msg.timestamp).toLocaleString();
 
         cardBody.appendChild(messageText);
         cardBody.appendChild(timestamp);
@@ -166,6 +191,22 @@
 
         chatLog.appendChild(wrapper);
         chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+
+    chatSocket.onmessage = function (e) {
+        const msg = JSON.parse(e.data);
+        console.debug(msg);
+
+        if (msg.type === 'chat.action') {
+            handleAction(msg);
+            return;
+        }
+
+        if (msg.type === 'chat.message') {
+            handleMessage(msg);
+            return;
+        }
     };
 
     chatSocket.onclose = function (e) {
