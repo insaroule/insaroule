@@ -170,11 +170,11 @@
                             </a>
                         </li>
                         {% for i in page_obj.paginator.page_range %}
-                            {% if i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+                            {% if i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:'-1' and i <= page_obj.number|add:'1' %}
                                 <li class="page-item {% if page_obj.number == i %}active{% endif %}">
                                     <a class="page-link" href="?page={{ i }}&{{ querystring|safe }}">{{ i }}</a>
                                 </li>
-                            {% elif i == page_obj.number|add:'-3' or i == page_obj.number|add:'3' %}
+                            {% elif i == page_obj.number|add:'-2' or i == page_obj.number|add:'2' %}
                                 <li class="page-item">
                                     <span class="page-link pe-none">…</span>
                                 </li>
