@@ -1,10 +1,12 @@
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
 from asgiref.sync import sync_to_async
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    # TODO: simplify the logic by using external functions for permission checks and message retrieval
     async def connect(self):
         from chat.models import ChatMessage, ChatRequest
 
@@ -12,72 +14,184 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_name = self.scope["url_route"]["kwargs"]["jr_pk"]
         self.room_group_name = f"chat_{self.room_name}"
 
-        # Fetch the JoinRequest instance
-        self.join_request = await sync_to_async(ChatRequest.objects.get)(
+        if self.user.is_anonymous:
+            logging.warning(
+                f"Anonymous user attempted to connect to chat room {self.room_name}."
+            )
+            await self.close()
+            return
+
+        self.chat_request = await sync_to_async(ChatRequest.objects.get)(
             pk=self.room_name
         )
+
+        # Check permissions
+        is_participant = await sync_to_async(
+            lambda: self.user in [self.chat_request.user, self.chat_request.ride.driver]
+        )()
+        is_moderator = (
+            await sync_to_async(self.user.has_perm)("chat.can_moderate_messages")
+            or self.user.is_staff
+        )
+
+        if not is_participant and not is_moderator:
+            logging.warning(
+                f"User {self.user.username} attempted to access chat room {self.room_name} without permission."
+            )
+            await self.close()
+            return
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
+        # Send previous messages with user UUIDs
         previous_messages = await sync_to_async(list)(
-            ChatMessage.objects.filter(join_request=self.join_request)
+            ChatMessage.objects.filter(chat_request=self.chat_request)
             .select_related("sender")
             .order_by("timestamp")[:50]
-            .values("sender__username", "content", "timestamp")
+            .values("pk", "sender__uuid", "content", "timestamp", "hidden")
         )
 
-        for msg in previous_messages:
-            direction = "out" if msg["sender__username"] == self.user.username else "in"
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "message": msg["content"],
-                        "timestamp": msg["timestamp"].isoformat(),
-                        "dir": direction,
-                    }
+        for message in previous_messages:
+            # if user is not a moderator, hide the content of hidden messages
+            if is_moderator:
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "chat.message",
+                            "id": message["pk"],
+                            "message": message["content"],
+                            "timestamp": message["timestamp"].isoformat(),
+                            "user_uuid": str(message["sender__uuid"]),
+                            "hidden": message["hidden"],
+                        }
+                    )
                 )
-            )
+            else:
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "id": message["pk"],
+                            "message": "This message has been removed."
+                            if message["hidden"]
+                            else message["content"],
+                            "timestamp": message["timestamp"].isoformat(),
+                            "user_uuid": str(message["sender__uuid"]),
+                            "hidden": message["hidden"],
+                        }
+                    )
+                )
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
+        """
+        Handle incoming messages from the WebSocket.
+        This method processes the received message, saves it to the database,
+        and broadcasts it to the chat room.
+        """
+
         from chat.models import ChatMessage
 
-        text_data_json = json.loads(text_data)
-        message = text_data_json["message"]
-        timestamp = timezone.now()
+        text_data = json.loads(text_data)
+        if "message" in text_data:
+            message = text_data["message"]
+            timestamp = timezone.now()
 
-        await ChatMessage.objects.acreate(
-            join_request=self.join_request,
-            sender=self.user,
-            content=message,
-            timestamp=timestamp,
-        )
+            await ChatMessage.objects.acreate(
+                chat_request=self.chat_request,
+                sender=self.user,
+                content=message,
+                timestamp=timestamp,
+            )
 
-        data = {
-            "type": "chat.message",
-            "message": message,
-            "timestamp": timestamp.isoformat(),
-            "sender": self.user.username,
-        }
+            # Broadcast the message with user UUID
+            data = {
+                "type": "chat.message",
+                "message": message,
+                "timestamp": timestamp.isoformat(),
+                "user_uuid": str(self.user.uuid),
+            }
 
-        await self.channel_layer.group_send(self.room_group_name, data)
+            await self.channel_layer.group_send(self.room_group_name, data)
+
+        elif "action" in text_data:
+            if (
+                not self.user.has_perm("chat.can_moderate_messages")
+                and not self.user.is_staff
+            ):
+                logging.warning(
+                    f"User {self.user.username} attempted to perform moderation action without permission."
+                )
+                return
+            action = text_data["action"]
+            message_id = text_data.get("message_id")
+
+            if action == "hide" and message_id:
+                # Hide the message
+                _ = await sync_to_async(
+                    ChatMessage.objects.filter(pk=message_id).update
+                )(hidden=True)
+
+                # Notify the group about the hidden message
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "chat.action",
+                        "action": "hide",
+                        "message_id": message_id,
+                    },
+                )
+
+            elif action == "unhide" and message_id:
+                _ = await sync_to_async(
+                    ChatMessage.objects.filter(pk=message_id).update
+                )(hidden=False)
+
+                # Notify the group about the unhidden message
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "chat.action",
+                        "action": "unhide",
+                        "message_id": message_id,
+                    },
+                )
 
     async def chat_message(self, event):
+        """
+        Handler for type 'chat.message'.
+        """
         message = event["message"]
         timestamp = event["timestamp"]
-        sender = event["sender"]
-
-        direction = "out" if sender == self.user.username else "in"
+        user_uuid = event["user_uuid"]
 
         await self.send(
             text_data=json.dumps(
                 {
+                    "type": "chat.message",
+                    "message_id": event.get("message_id"),
                     "message": message,
                     "timestamp": timestamp,
-                    "dir": direction,
+                    "user_uuid": user_uuid,
+                }
+            )
+        )
+
+    async def chat_action(self, event):
+        """
+        Handle chat actions such as hiding or unhiding messages.
+        """
+        action = event["action"]
+        message_id = event["message_id"]
+
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "chat.action",
+                    "action": action,
+                    "message_id": message_id,
                 }
             )
         )

@@ -61,7 +61,7 @@ class ChatMessage(models.Model):
         verbose_name=_("sender"),
     )
 
-    join_request = models.ForeignKey(
+    chat_request = models.ForeignKey(
         ChatRequest,
         on_delete=models.CASCADE,
         related_name="messages",
@@ -69,3 +69,36 @@ class ChatMessage(models.Model):
     )
 
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    hidden = models.BooleanField(
+        default=False,
+        verbose_name=_("hidden"),
+        help_text=_("Indicates whether this message is hidden from regular users"),
+    )
+
+    class Meta:
+        # Custom permission to moderate chat messages
+        permissions = (("can_moderate_messages", _("Can moderate chat messages")),)
+
+
+class ChatReport(models.Model):
+    chat_request = models.ForeignKey(
+        ChatRequest,
+        on_delete=models.CASCADE,
+        related_name="reports",
+        verbose_name=_("chat request"),
+    )
+
+    reported_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="chat_reports",
+        verbose_name=_("reported by"),
+    )
+
+    reason = models.TextField(verbose_name=_("reason"), blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"ChatReport({self.chat_request.uuid} by {self.reported_by.username})"

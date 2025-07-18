@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load duration %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<div class="container-fluid mt-3">
+    {{ join_request.pk|json_script:'room-name' }}
+    {{ request.user.uuid|json_script:'current-user-uuid' }}
+    {{ join_request.ride.driver.uuid|json_script:'driver-uuid' }}
+    {{ join_request.user.uuid|json_script:'requester-uuid' }}
+
+    <h1>Messages</h1>
+    <div class="row h-100">
+        <div class="col-lg-3 h-100 mb-3 mb-lg-0">
+            {% include 'chat/includes/mod_profile.html' with jr=join_request profile=join_request.ride.driver color='#92b389' %}
+        </div>
+        <div class="col-lg-6">
+            <div class="card" style="min-height: 80vh;">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="card-title mb-0">Room: {{ join_request.uuid }}</h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="text-center small text-body-secondary my-2">
+                        Nous pouvons modérer les messages si nécessaire.
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                            <path
+                                d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2" />
+                        </svg>
+                    </div>
+
+                    <div id="chat-log" class="p-3 d-flex flex-column gap-2" style="max-height: 65vh; overflow-y: auto;">
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <div class="input-group input-group">
+                        <input type="text" id="chat-message-input" class="form-control"
+                            placeholder="Écrivez votre message ici...">
+                        <input type="button" class="btn btn-primary" value="Send" id="chat-message-submit">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 h-100 mb-3 mb-lg-0">
+            {% include 'chat/includes/mod_profile.html' with jr=join_request profile=join_request.user color='beige' %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+    const currentUserUuid = JSON.parse(document.getElementById('current-user-uuid').textContent);
+
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+    );
+
+    const driver = JSON.parse(document.getElementById('driver-uuid').textContent);
+    const requester = JSON.parse(document.getElementById('requester-uuid').textContent);
+
+    const requesterColor = "#f5f5dc";
+    const csrftoken = getCookie('csrftoken');
+    const driverColor = "#92b389";
+
+
+  
+
+    function hideMessage(messageId) {
+        // Hide the message element
+        const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
+        messageEl.querySelector('.card-body p').textContent = "***";
+        // Switch the button to unhide
+        const messageFooter = messageEl.querySelector('#message-footer-' + messageId);
+        messageFooter.innerHTML = `
+            <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'unhide', message_id: ${messageId} }));">
+                <i class="bi bi-eye-slash"></i> Unhide
+            </button>
+        `;
+    }
+
+    function unhideMessage(messageId) {
+        
+        const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
+        const messageText = messageEl.querySelector('.card-body p');
+        messageText.textContent = messageEl.dataset.originalMessage;
+        // Switch the button to hide
+        const messageFooter = messageEl.querySelector('#message-footer-' + messageId);
+        messageFooter.innerHTML = `
+            <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'hide', message_id: ${messageId} }));">
+                <i class="bi bi-eye"></i> Hide
+            </button>
+        `;
+    }
+
+
+    function handleMessage(msg) {
+        const chatLog = document.querySelector('#chat-log');
+
+        const isCurrentUser = msg.user_uuid === currentUserUuid;
+        const wrapper = document.createElement('div');
+        wrapper.className = `d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
+
+        const card = document.createElement('div');
+
+        if (isCurrentUser) {
+            card.className = `card bg-primary text-white`;
+        } else if (msg.user_uuid === driver) {
+            card.className = `card text-dark`;
+            card.style.backgroundColor = driverColor;
+        } else if (msg.user_uuid === requester) {
+            card.className = `card text-dark`;
+            card.style.backgroundColor = requesterColor;
+        } else {
+            card.className = `card bg-light`;
+        }
+        card.style.maxWidth = '75%';
+        card.dataset.originalMessage = msg.message;
+        card.dataset.messageId = msg.id;
+
+        const cardBody = document.createElement('div');
+        cardBody.className = 'card-body pt-2 pb-0 px-3';
+
+        const messageText = document.createElement('p');
+        messageText.className = 'mb-0';
+        if (!msg.hidden) {
+            messageText.textContent = msg.message;
+        } else {
+            messageText.textContent = "***";
+        }
+
+        cardBody.appendChild(messageText);
+        card.appendChild(cardBody);
+        wrapper.appendChild(card);
+        // Display the hide button when message does not come from the current user
+        if (!isCurrentUser) {
+            cardBody.className = "card-body py-2 px-3"
+
+            const messageFooter = document.createElement('div');
+            messageFooter.id = `message-footer-${msg.id}`;
+            messageFooter.className = 'd-flex justify-content-between align-items-center';
+            if (!msg.hidden) {
+                messageFooter.innerHTML = `
+                    <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'hide', message_id: ${msg.id} }));">
+                        <i class="bi bi-eye"></i> Hide
+                    </button>
+                `;
+            } else {
+                messageFooter.innerHTML = `
+                    <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'unhide', message_id: ${msg.id} }));">
+                        <i class="bi bi-eye-slash"></i> Unhide
+                    </button>
+                `;
+            }
+            card.appendChild(messageFooter);
+        }
+        
+
+        chatLog.appendChild(wrapper);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    
+    function handleAction(msg) {
+        const messageEl = document.querySelector(`.card[data-message-id="${msg.message_id}"]`);
+        if (!messageEl) return;
+
+        if (msg.action === 'hide') {
+            hideMessage(msg.message_id);
+        } else if (msg.action === 'unhide') {
+            unhideMessage(msg.message_id);
+        }
+    }
+
+
+    chatSocket.onmessage = function (e) {
+        const msg = JSON.parse(e.data);
+        console.log(msg);
+
+        if (msg.type === 'chat.action') {
+            // If another moderator hides or unhides a message, we want to see
+            // the change immediately without needing to refresh.
+            handleAction(msg);
+            return;
+
+        }
+
+        if (msg.type === 'chat.message') {
+            handleMessage(msg);
+            return;
+        }
+    };
+
+    chatSocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    // Send message when the submit button is clicked
+    document.querySelector('#chat-message-submit').onclick = function (e) {
+        const messageInputDom = document.querySelector('#chat-message-input');
+        const message = messageInputDom.value.trim();
+        if (message === '') return;
+
+        chatSocket.send(JSON.stringify({ message }));
+        messageInputDom.value = '';
+    };
+</script>
+{% endblock content %}

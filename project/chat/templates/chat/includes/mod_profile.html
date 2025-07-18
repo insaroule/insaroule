@@ -1,0 +1,36 @@
+<div class="card h-100 mb-3">
+    <div class="card-header">
+        Moderation profile
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-row gap-3">
+            <img src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+                class="rounded-circle" width="70" />
+            <div class="d-flex flex-column">
+                <span class="fs-4">{{ profile.username }}</span>
+                <span>
+                    {% if jr.ride.driver == profile %}
+                        <span class="badge" style="background-color: #92b389;">Driver</span>
+                    {% elif jr.user == profile %}
+                        <span class="badge text-dark" style="background-color: beige;">Requester</span>
+                    {% else %}
+                        <span class="badge bg-danger">ERROR</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="mt-3 text-center">
+            <form action="" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger disabled" name="ban_user"><i class="bi bi-ban"></i></button>
+                <button type="submit" class="btn btn-sm btn-warning disabled" name="ban_user"><i class="bi bi-shield-fill-exclamation"></i></button>
+            </form>
+        </div>
+        <div class="mt-3">
+            <h5>Mod history</h5>
+            <span class="badge text-bg-secondary">Coming soon</span>
+
+        </div>
+
+    </div>
+</div>
