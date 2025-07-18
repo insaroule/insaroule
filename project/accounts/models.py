@@ -8,3 +8,4 @@ class User(AbstractUser):
 
     email = models.EmailField(_("Email Address"), unique=True)
     email_verified = models.BooleanField(default=False)
+    last_verification_email_sent = models.DateTimeField(null=True, blank=True)

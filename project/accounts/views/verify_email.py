@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 
 from accounts.tasks import send_verification_email
 from accounts.tokens import email_verify_token
-
+from datetime import timedelta
+from django.utils import timezone
 
 # ============================================================= #
 #                   Email verification views                    #
@@ -21,12 +22,31 @@ def verify_email_send_token(request):
     if request.method == "POST":
         if not request.user.email_verified:
             user = request.user
+            now = timezone.now()
+            cooldown = timedelta(minutes=5)
+
+            if (
+                user.last_verification_email_sent
+                and now - user.last_verification_email_sent < cooldown
+            ):
+                remaining = cooldown - (now - user.last_verification_email_sent)
+                minutes = int(remaining.total_seconds() // 60) + 1
+                messages.warning(
+                    request,
+                    f"Veuillez patienter {minutes} minute(s) avant de renvoyer un e-mail.",
+                )
+                return redirect("accounts:verify_email_sent")
+
             site_base_url = request.scheme + "://" + get_current_site(request).domain
             user_token = email_verify_token.make_token(user)
 
             send_verification_email.delay(
                 user.username, user.pk, user.email, user_token, site_base_url
             )
+
+            user.last_verification_email_sent = now
+            user.save(update_fields=["last_verification_email_sent"])
+
             return redirect("accounts:verify_email_sent")
         else:
             return redirect("accounts:register")
