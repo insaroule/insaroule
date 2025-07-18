@@ -238,7 +238,6 @@
 
 
     function getRouteFromCoordinates(departureLat, departureLng, arrivalLat, arrivalLng) {
-        console.log("Fetching route from coordinates:", departureLat, departureLng, arrivalLat, arrivalLng);
         const start = encodeURIComponent(`${departureLng},${departureLat}`); 
         const end = encodeURIComponent(`${arrivalLng},${arrivalLat}`);
 
