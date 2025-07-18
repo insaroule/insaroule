@@ -1,0 +1,62 @@
+[
+    {
+        "model": "accounts.user",
+        "pk": "45a6260a-d2dc-4222-abd7-8eed77e54ae9",
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$Yw1VAKZtOHjx129LLLgA0M$wfRJ/iw1mgJsuFCJ9zWkdnyGwXf6tuUr6HCBuAzm7mg=",
+            "is_superuser": true,
+            "username": "admin",
+            "email": "admin@example.org",
+            "email_verified": true
+        }
+    },
+    {
+        "model": "accounts.user",
+        "pk": "b1c2d3e4-f5a6-7890-1234-56789abcdef0",
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$Yw1VAKZtOHjx129LLLgA0M$wfRJ/iw1mgJsuFCJ9zWkdnyGwXf6tuUr6HCBuAzm7mg=",
+            "is_superuser": false,
+            "username": "test1",
+            "email": "test1@example.org",
+            "email_verified": true
+        }
+    },
+    {
+        "model": "accounts.user",
+        "pk": "c2d3e4f5-a6b7-8901-2345-6789abcdef01",
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$Yw1VAKZtOHjx129LLLgA0M$wfRJ/iw1mgJsuFCJ9zWkdnyGwXf6tuUr6HCBuAzm7mg=",
+            "is_superuser": false,
+            "username": "test2",
+            "email": "test2@example.org",
+            "email_verified": true
+        }
+    },
+    {
+        "model": "accounts.user",
+        "pk": "d2d3e4f5-a6b7-8901-2345-6789abcdef02",
+        "fields": {
+            "password": "pbkdf2_sha256$1000000$Yw1VAKZtOHjx129LLLgA0M$wfRJ/iw1mgJsuFCJ9zWkdnyGwXf6tuUr6HCBuAzm7mg=",
+            "is_superuser": false,
+            "username": "mod",
+            "email": "mod@example.org",
+            "email_verified": true,
+            "groups": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "auth.group",
+        "pk": 1,
+        "fields": {
+            "name": "Moderators",
+            "permissions": [
+                53,
+                54,
+                57
+            ]
+        }
+    }
+    
+]
