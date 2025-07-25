@@ -52,109 +52,72 @@
 {% endblock %}
 
 {{ rides_geo|json_script:"rides-geo-data" }}
-
 <script>
-    let route = null;
-    const map = L.map('map').setView([46.6, 1.88], 6);
-    const layers = [];
+  let route = null;
+  const layers = [];
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-    }).addTo(map);
+  const rides = JSON.parse(document.getElementById("rides-geo-data").textContent);
 
-    const rides = JSON.parse(document.getElementById('rides-geo-data').textContent);
-    const allBounds = [];
-    const colors = [
-        '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-        '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
-        '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
-        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
-    ];
-    
-    document.getElementById('start_dt').addEventListener('change', function () {
-        const selectedDate = this.value;
-        clearMap();
-        const filtered = rides.filter(ride => {
-            const rideDate = new Date(ride.start_dt).toISOString().split('T')[0];
-            return rideDate === selectedDate;
-        });        
-        displayRides(filtered);
-    });
+  const map = L.map("map").setView([46.5, 2.5], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap",
+  }).addTo(map);
 
+  const allBounds = [];
+  const colors = [
+    '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+    '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
+    '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+  ];
 
-    async function displayRides(rides) {
-        const localBounds = [];
-        for (let index = 0; index < rides.length; index++) {
-            const ride = rides[index];
-            const color = colors[index % colors.length]; 
+  document.getElementById('start_dt').addEventListener('change', function () {
+    const selectedDate = this.value;
+    clearMap();
+    const filtered = rides.filter(ride => {
+        const rideDate = new Date(ride.start_dt).toISOString().split('T')[0];
+        return rideDate === selectedDate;
+    });        
+    displayRides(filtered);
+  });
 
-            const markerstart = L.marker([ride.start_lat, ride.start_lon]).addTo(map);
-            const markerend = L.marker([ride.end_lat, ride.end_lon]).addTo(map);
+  async function displayRides(rides) {
+    const localBounds = [];
 
-            layers.push(markerstart, markerend);
+    var index = 0;
+    rides.forEach(ride => {
+        const color = colors[(index) % colors.length]; 
 
-            if (markerstart && markerend) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                // If both markers are set, fetch the route
-                getRouteFromCoordinates(
-                    markerstart.getLatLng().lat,
-                    markerstart.getLatLng().lng,
-                    markerend.getLatLng().lat,
-                    markerend.getLatLng().lng,
-                    color,
-                    ride,
-                    localBounds
-                );
+        // Ajouter les marqueurs
+        const startMarker = L.marker(ride.start).addTo(map).bindPopup("Départ: " + ride.start_name);
+        const endMarker = L.marker(ride.end).addTo(map).bindPopup("Arrivée: " + ride.end_name);
+        layers.push(startMarker, endMarker);
+
+        // Tracer la route
+        route = L.geoJSON(ride.geometry, {
+            style: {
+                color: color,
+                weight: 4,
+                opacity: 0.6
             }
-        };
-    }
+        }).addTo(map);
 
+        layers.push(route);
 
-    function getRouteFromCoordinates(departureLat, departureLng, arrivalLat, arrivalLng, color, ride, bound) {
-        const start = encodeURIComponent(`${departureLng},${departureLat}`); 
-        const end = encodeURIComponent(`${arrivalLng},${arrivalLat}`);
-        const url = `/api/routing/?start=${start}&end=${end}`;
+        route.on('click', () => {
+            showRideInfo(ride, color);
+        });
 
-        console.log("Fetching route from coordinates:", departureLat, departureLng, arrivalLat, arrivalLng);
+        const bounds = route.getBounds();
+        if (bounds.isValid()) {
+            allBounds.push(bounds);
+            updateMapBounds(localBounds);
+        }
+        index++;
+    });
+  }
 
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.geometry && data.geometry.coordinates.length > 0) {
-                    route = L.geoJSON(data.geometry, {
-                        style: {
-                            color: color,
-                            weight: 5,
-                            opacity: 0.7
-                        }
-                    }).addTo(map);
-
-                    route.on('click', () => {
-                        showRideInfo(ride, color);
-                    });
-
-                    layers.push(route);
-
-                    const bounds = route.getBounds();
-                    if (bounds.isValid()) {
-                        allBounds.push(bounds);
-                        updateMapBounds(bound);
-                    }
-                } else {
-                    console.error('No geometry found in the response for ride:', ride.uuid);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching route:', error);
-            });
-    }
-
-    function updateMapBounds(bounds) {
+  function updateMapBounds(bounds) {
         if (!bounds || bounds.length === 0) return;
 
         let fullBounds = bounds[0];
@@ -169,51 +132,48 @@
         }
     }
 
-    function showRideInfo(ride, color) {
+
+  function showRideInfo(ride, color) {
         
-        const card = document.getElementById('ride-info-card');
-        const details = document.getElementById('ride-details');
-        
-        details.innerHTML = `
-            <button id="close-info" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
-            <p><strong>${ride.start_d}</strong></p>
-            <p><strong>Départ :</strong> ${ride.start_name}</p>
-            <p><strong>Arrivée :</strong> ${ride.end_name}</p>
-            <p><strong>Heure :</strong> ${ride.start_t}</p>
-            <p><strong>Durée :</strong> ${ride.duration}</p>
-            <p><strong>Prix :</strong> ${ride.price} €</p>
-            <div class="text-center" style="position:absolute; bottom:10px; right:10px; background:none; border:none; font-size:20px; cursor:pointer;">
-                <a href="/${ride.uuid}/" class="btn btn-primary">See more</a>
-            </div>
-        `;
-        
+    const card = document.getElementById('ride-info-card');
+    const details = document.getElementById('ride-details');
+    
+    details.innerHTML = `
+        <button id="close-info" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        <p><strong>${ride.start_d}</strong></p>
+        <p><strong>Start :</strong> ${ride.start_name}</p>
+        <p><strong>Destination :</strong> ${ride.end_name}</p>
+        <p><strong>Hour :</strong> ${ride.start_t}</p>
+        <p><strong>Duration :</strong> ${ride.duration}</p>
+        <p><strong>Price :</strong> ${ride.price} €</p>
+        <div class="text-center" style="position:absolute; bottom:10px; right:10px; background:none; border:none; font-size:20px; cursor:pointer;">
+            <a href="/${ride.uuid}/" class="btn btn-primary">See more</a>
+        </div>
+    `;
+    
 
-        document.getElementById('close-info').addEventListener('click', () => {
-            card.style.display = 'none';
-        });
-
-        
-
-        card.style.borderLeft = `5px solid ${color}`;
-        card.style.display = 'block';
-    }
-
-
-    function clearMap() {
-        layers.forEach(layer => {
-            map.removeLayer(layer);
-        });
-        layers.length = 0;
-    }
-
-    document.getElementById('reset-date').addEventListener('click', () => {
-        document.getElementById('start_dt').value = '';
-        clearMap();
-        displayRides(rides);
+    document.getElementById('close-info').addEventListener('click', () => {
+        card.style.display = 'none';
     });
 
-    displayRides(rides)
+    card.style.borderLeft = `5px solid ${color}`;
+    card.style.display = 'block';
+  }
 
+  function clearMap() {
+    layers.forEach(layer => {
+        map.removeLayer(layer);
+    });
+    layers.length = 0;
+  }
+
+  document.getElementById('reset-date').addEventListener('click', () => {
+    document.getElementById('start_dt').value = '';
+    clearMap();
+    displayRides(rides);
+  });
+
+  displayRides(rides);
 </script>
 
 {% endblock %}

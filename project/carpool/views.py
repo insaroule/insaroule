@@ -14,7 +14,7 @@ from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.views.decorators.http import require_http_methods
 from chat.models import ChatRequest
-
+import json
 
 from django.core.paginator import Paginator
 
@@ -22,29 +22,36 @@ from django.core.paginator import Paginator
 @login_required
 def ride_map(request):
     rides = Ride.objects.all()
+    rides_geo = []
 
-    rides_geo = [
-        {
-            "uuid": str(ride.uuid),
-            "start_name": ride.start_loc.fulltext,
-            "start_lat": ride.start_loc.lat,
-            "start_lon": ride.start_loc.lng,
-            "end_name": ride.end_loc.fulltext,
-            "end_lat": ride.end_loc.lat,
-            "end_lon": ride.end_loc.lng,
-            "start_d": ride.start_dt.strftime("%A %d %B %Y"),
-            "start_t": ride.start_dt.strftime("%H:%M"),
-            "start_dt": ride.start_dt.isoformat(),
-            "price": ride.price,
-            "duration": f"{int(ride.duration.total_seconds() // 3600)}h {int((ride.duration.total_seconds() % 3600) // 60)}",
-        }
-        for ride in rides
-    ]
+    for ride in rides:
+        if ride.geometry:
+            rides_geo.append(
+                {
+                    "start": [ride.start_loc.lat, ride.start_loc.lng],
+                    "end": [ride.end_loc.lat, ride.end_loc.lng],
+                    "geometry": json.loads(
+                        ride.geometry.geojson
+                    ),  # supposé être une chaîne GeoJSON valide
+                    "uuid": str(ride.uuid),
+                    "start_name": ride.start_loc.fulltext,
+                    "start_lat": ride.start_loc.lat,
+                    "start_lon": ride.start_loc.lng,
+                    "end_name": ride.end_loc.fulltext,
+                    "end_lat": ride.end_loc.lat,
+                    "end_lon": ride.end_loc.lng,
+                    "start_d": ride.start_dt.strftime("%A %d %B %Y"),
+                    "start_t": ride.start_dt.strftime("%H:%M"),
+                    "start_dt": ride.start_dt.isoformat(),
+                    "price": ride.price,
+                    "duration": f"{int(ride.duration.total_seconds() // 3600)}h {int((ride.duration.total_seconds() % 3600) // 60)}",
+                }
+            )
 
-    context = {
-        "rides_geo": rides_geo,
-    }
+    context = {"rides_geo": rides_geo}
     return render(request, "rides/map.html", context)
+
+
 @require_http_methods(["POST"])
 def change_jrequest_status(request, jr_pk):
     join_request = get_object_or_404(ChatRequest, pk=jr_pk)
