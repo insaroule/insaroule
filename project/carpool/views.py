@@ -29,11 +29,11 @@ def list_my_rides(request):
     p_rides = Ride.objects.filter(driver=request.user).order_by("start_dt")
     s_rides = ChatRequest.objects.filter(user=request.user).order_by("ride__start_dt")
 
-    s_paginator = Paginator(s_rides, 10)
-    p_paginator = Paginator(p_rides, 10)
+    s_paginator = Paginator(s_rides, 3)
+    p_paginator = Paginator(p_rides, 3)
 
-    s_page_num = request.GET.get("subscribed_page")
-    p_page_num = request.GET.get("published_page")
+    s_page_num = request.GET.get("s_page")
+    p_page_num = request.GET.get("p_page")
 
     s_page_obj = s_paginator.get_page(s_page_num)
     p_page_obj = p_paginator.get_page(p_page_num)

@@ -3,7 +3,7 @@
     <ul class="pagination justify-content-center">
         <li class="page-item {% if not iterated_obj.has_previous %}disabled{% endif %}">
             <a class="page-link"
-                href="{% if iterated_obj.has_previous %}?page={{ iterated_obj.previous_page_number }}&{{ querystring|safe }}{% endif %}"
+                href="{% if iterated_obj.has_previous %}?{{ page_param }}={{ iterated_obj.previous_page_number }}&{{ querystring|safe }}{% endif %}"
                 aria-label="{% translate 'Previous' %}">
                 {% translate "Previous" %}
             </a>
@@ -11,7 +11,7 @@
         {% for i in iterated_obj.paginator.page_range %}
             {% if i == 1 or i == iterated_obj.paginator.num_pages or i >= iterated_obj.number|add:'-1' and i <= iterated_obj.number|add:'1' %} 
             <li class="page-item {% if iterated_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}&{{ querystring|safe }}">{{ i }}</a>
+                <a class="page-link" href="?{{ page_param }}={{ i }}&{{ querystring|safe }}">{{ i }}</a>
             </li>
             {% elif i == iterated_obj.number|add:'-2' or i == iterated_obj.number|add:'2' %}
             <li class="page-item">
@@ -21,7 +21,7 @@
         {% endfor %}
         <li class="page-item {% if not iterated_obj.has_next %}disabled{% endif %}">
             <a class="page-link"
-                href="{% if iterated_obj.has_next %}?page={{ iterated_obj.next_page_number }}&{{ querystring|safe }}{% endif %}"
+                href="{% if iterated_obj.has_next %}?{{ page_param }}={{ iterated_obj.next_page_number }}&{{ querystring|safe }}{% endif %}"
                 aria-label="{% translate 'Next' %}">
                 {% translate "Next" %}
             </a>
