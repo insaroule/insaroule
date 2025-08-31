@@ -66,6 +66,7 @@ class CreateRideForm(forms.Form):
         required=True,
         min_value=0,
         decimal_places=2,
+        max_value=999,
         widget=forms.NumberInput(
             attrs={
                 "placeholder": _("Price per seat"),

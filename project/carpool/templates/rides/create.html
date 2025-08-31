@@ -1,30 +1,30 @@
 {% extends 'base.html' %} {% load i18n %} {% load static %} {% block extrahead %}
-<link
-    rel="stylesheet"
-    href="{% static 'vendors/leaflet/leaflet.css' %}"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-/>
-<link
-    rel="stylesheet"
-    href="{% static 'vendors/choices-js/public/assets/styles/choices.min.css' %}"
-/>
+<link rel="stylesheet" href="{% static 'vendors/leaflet/leaflet.css' %}"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="{% static 'vendors/choices-js/public/assets/styles/choices.min.css' %}" />
 <style>
     .choices__inner {
-        background-color: #ffffff !important; /* white background instead of grey */
-        border: 1px solid #cccccc; /* lighter border */
+        background-color: #ffffff !important;
+        /* white background instead of grey */
+        border: 1px solid #cccccc;
+        /* lighter border */
     }
-    
-    .choices__placeholder {
-        opacity: 1;
+
+    .choices__input {
+        background-color: #ffffff !important;
+        /* white background instead of grey */
+
     }
+
     #departure {
         z-index: 999;
     }
+
     #arrival {
         z-index: 998;
     }
 </style>
+<link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" />
 
 {% endblock extrahead %} {% block content %}
 <div class="container-fluid mt-3">
@@ -61,26 +61,27 @@
                 {% csrf_token %}
 
                 <div id="hidden">
-                    {# Departure information #} 
-                    {{ form.d_fulltext }} 
-                    {{ form.d_street }} 
+                    {# Departure information #}
+                    {{ form.d_fulltext }}
+                    {{ form.d_street }}
                     {{ form.d_city }}
-                    {{ form.d_zipcode }} 
-                    {{ form.d_latitude }} 
-                    {{ form.d_longitude }} 
-                    {# Arrival information #} 
-                    {{ form.a_fulltext }} 
-                    {{ form.a_street }} 
-                    {{ form.a_city }} 
-                    {{ form.a_zipcode }} 
-                    {{ form.a_latitude }} 
-                    {{ form.a_longitude }} 
-                    {# Routing information #} 
-                    {{ form.r_geometry }} 
+                    {{ form.d_zipcode }}
+                    {{ form.d_latitude }}
+                    {{ form.d_longitude }}
+                    {# Arrival information #}
+                    {{ form.a_fulltext }}
+                    {{ form.a_street }}
+                    {{ form.a_city }}
+                    {{ form.a_zipcode }}
+                    {{ form.a_latitude }}
+                    {{ form.a_longitude }}
+                    {# Routing information #}
+                    {{ form.r_geometry }}
                     {{ form.r_duration }}
                 </div>
 
                 <div class="mb-3">
+                    <label for="{{ form.departure_datetime.id_for_label }}">Departure date</label>
                     {{ form.departure_datetime }}
                     {% if form.departure_datetime.errors %}
                     <span class="text-danger">{{ form.departure_datetime.errors }}</span>
@@ -88,6 +89,7 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="{{ form.seats.id_for_label }}">Seats</label>
                     {{ form.seats }}
                     {% if form.seats.errors %}
                     <span class="text-danger">{{ form.seats.errors }}</span>
@@ -95,23 +97,26 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="">{% translate "Price and Payment method" %}</label>
                     {{ form.price_per_seat }}
-                    {% if form.price_per_seat.errors %}
-                    <span class="text-danger">{{ form.price_per_seat.errors }}</span>
-                    {% endif %}
+                
+                    <div class="mt-1 small text-center">
+                            {% for payment_method in payment_methods %}
+                            <div class="form-check form-check-inline" id="payment-options">
+                                <input class="form-check-input" type="checkbox" id="id_{{ payment_method.0 }}"
+                                    value="{{ payment_method.0 }}" name="payment_method">
+                                <label class="form-check-label" for="id_{{ payment_method.0 }}">
+                                    {{ payment_method.1 }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="payment-options">{% translate "Payment method" %}</label>
-                   
-                    <div id="payment-options">
-                        {{ form.payment_method }}
-                    </div>
-                    {% if form.payment_method.errors %}
-                    <span class="text-danger">{{ form.payment_method.errors }}</span>
-                    {% endif %}
-                </div>
+
+
                 
+
                 <button class="btn btn-primary w-100" type="submit">
                     {% translate "Publish ride" %}
                 </button>
@@ -120,11 +125,8 @@
     </div>
 </div>
 {% endblock content %} {% block extrascript %}
-<script
-    src="{% static 'vendors/leaflet/leaflet.js' %}"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-></script>
+<script src="{% static 'vendors/leaflet/leaflet.js' %}" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
 
 <script src="{% static 'vendors/choices-js/public/assets/scripts/choices.min.js' %}"></script>
 
@@ -171,13 +173,16 @@
     const hRouteGeometry = document.getElementById("id_r_geometry");
     const hRouteDuration = document.getElementById("id_r_duration");
 
+
     const departure = new Choices(departureEl, {
         placeholder: true,
         placeholderValue: "{% translate 'Search for a precise departure address' %}",
+        noChoicesText: "{% translate 'No address found' %}",
     });
     const arrival = new Choices(arrivalEl, {
         placeholder: true,
         placeholderValue: "{% translate 'Search for a precise arrival address' %}",
+        noChoicesText: "{% translate 'No address found' %}",
     });
 
     var departureM,
@@ -451,10 +456,6 @@
 
             paymentCheckboxes.forEach((checkbox) => {
                 checkbox.disabled = disable;
-                checkbox.closest("label").style.opacity = disable ? 0.5 : 1;
-                checkbox.closest("label").style.pointerEvents = disable
-                    ? "none"
-                    : "auto";
             });
         }
 
