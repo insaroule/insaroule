@@ -133,7 +133,7 @@ msgid ""
 msgstr ""
 "Le formulaire pour exporter vos données n'est pas encore implémenté. Pour "
 "recevoir le fichier contenant vos données, vous pouvez nous envoyer un mail "
-"à <a href\"mailto:%(dpo_email)s\">%(dpo_email)s</a>. Nous répondrons à votre "
+"à <a href=\"mailto:%(dpo_email)s\">%(dpo_email)s</a>. Nous répondrons à votre "
 "demande aussi rapidement que possible (dans un délai maximal d'un mois)."
 
 #: accounts/templates/account/data_export_email.txt:3
