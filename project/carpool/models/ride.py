@@ -167,3 +167,8 @@ class Ride(models.Model):
 
     def get_absolute_url(self):
         return reverse("carpool:detail", kwargs={"pk": self.pk})
+
+    class Meta:
+        permissions = [
+            ("view_ride_statistics", "Can view ride statistics"),
+        ]

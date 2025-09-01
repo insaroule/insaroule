@@ -4,7 +4,7 @@ import json
 from asgiref.sync import sync_to_async
 from chat.models import ChatRequest
 from chat.tasks import send_email_confirmed_ride, send_email_declined_ride
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import GEOSGeometry, Point
 from django.contrib.gis.measure import D
@@ -24,6 +24,11 @@ from django.utils.timezone import localtime
 from django.db.models import Count, F, ExpressionWrapper, IntegerField
 
 import logging
+
+
+@permission_required(["carpool.view_statistics"])
+def bo_statistics(request):
+    return render(request, "rides/back-office/statistics.html")
 
 
 @login_required

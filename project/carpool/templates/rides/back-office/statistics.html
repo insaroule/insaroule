@@ -1,0 +1,51 @@
+{% extends 'base.html' %}{% load static i18n %}
+
+
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}" />
+
+{% endblock extrahead %}
+
+{% block content %}
+<div class="container mt-3">
+    <h1>Statistics</h1>
+    <div class="row">
+        <div class="col-xl col-md-6 mb-3">
+            <div class="card border border-5 border-primary border-end-0 border-top-0 border-bottom-0 shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Rides
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-body-secondary">{{ total_ride|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-car-front-fill text-body-tertiary display-5 pe-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-6 mb-3">
+            <div class="card border border-5 border-success border-end-0 border-top-0 border-bottom-0 shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Spared CO<sub>2</sub> (in kg)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-body-secondary">{{ total_co2|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-leaf-fill text-body-tertiary display-5 pe-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock content %}

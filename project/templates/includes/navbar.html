@@ -56,6 +56,9 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'accounts:me' %}">{% translate "My Account" %}</a></li>
                         <li><a class="dropdown-item" href="mailto:{{ SUPPORT_EMAIL }}">{% translate "Report Issue" %}</a></li>
+                        {% if perms.carpool.view_statistics %}
+                        <li><a class="dropdown-item" href="{% url 'carpool:bo_statistics' %}">{% translate "Back Office" %}</a></li>
+                        {% endif %}
                         {% if user.is_staff %}
                         <li><a class="dropdown-item text-danger fw-bold" href="{% url 'admin:index' %}">{% translate "Admin Panel" %}</a></li>
                         {% endif %}
