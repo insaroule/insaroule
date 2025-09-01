@@ -83,3 +83,9 @@ cmd = "uv run celery -A project worker -l info"
 cwd = "project"
 env = { "DJANGO_SETTINGS_MODULE" = "project.settings.development" }
 cmd = "uv run celery -A project beat -l info"
+
+
+[tool.poe.tasks.mpy]
+help = "Alias for running manage.py"
+cwd = "project"
+cmd = "uv run manage.py"
