@@ -603,11 +603,11 @@
 
             const formData = new FormData(vehicleForm);
             const url = formData.get("vehicle_id")
-                ? `/api/vehicles/${formData.get("vehicle_id")}/edit/`
+                ? `/api/vehicles/${formData.get("vehicle_id")}/update/`
                 : "/api/vehicles/new/";
 
             fetch(url, {
-                method: formData.get("vehicle_id") ? "PUT" : "POST",
+                method: formData.get("vehicle_id") ? "POST" : "POST",
                 headers: {
                     "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
                 },
@@ -664,34 +664,34 @@
                     }
 
                     let option = vehicleSelect.querySelector(
-                        `option[value="${data.id}"]`,
+                        `option[value="${data.vehicle.id}"]`,
                     );
 
                     if (option) {
                         // Update existing option
-                        option.textContent = `${data.name} - ${data.seats} {% translate "seats" %}`;
-                        option.dataset.name = data.name;
-                        option.dataset.description = data.description;
-                        option.dataset.seats = data.seats;
-                        option.dataset.co2 = data.geqCO2_per_km;
+                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seats" %}`;
+                        option.dataset.name = data.vehicle.name;
+                        option.dataset.description = data.vehicle.description;
+                        option.dataset.seats = data.vehicle.seats;
+                        option.dataset.co2 = data.vehicle.geqCO2_per_km;
                     } else {
                         // Add new option
                         option = document.createElement("option");
-                        option.value = data.id;
-                        option.textContent = `${data.name} - ${data.seats} {% translate "seats" %}`;
-                        option.dataset.name = data.name;
-                        option.dataset.description = data.description;
-                        option.dataset.seats = data.seats;
-                        option.dataset.co2 = data.geqCO2_per_km;
+                        option.value = data.vehicle.id;
+                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seats" %}`;
+                        option.dataset.name = data.vehicle.name;
+                        option.dataset.description = data.vehicle.description;
+                        option.dataset.seats = data.vehicle.seats;
+                        option.dataset.co2 = data.vehicle.geqCO2_per_km;
                         vehicleSelect.appendChild(option);
                     }
 
                     // Select the newly added/edited vehicle
-                    vehicleSelect.value = data.id;
+                    vehicleSelect.value = data.vehicle.id;
 
                     vehicleModal.hide();
                 })
-                .catch((error) => {
+                .catch((error) => {w
                     alert(error.message);
                 });
         });
