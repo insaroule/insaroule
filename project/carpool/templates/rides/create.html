@@ -520,7 +520,7 @@
             ]);
         }
     });
-    
+
     // =================================================================
     // Automated enabling/disabling of payment method checkboxes
     // =================================================================
@@ -546,6 +546,48 @@
 </script>
 
 <script>
+    function createToast(alert, content) {
+        const toastContainer = document.getElementById("toastContainer");
+        const toastEl = document.createElement("div");
+        
+        if (alert == "debug") {
+                toastEl.className = "toast align-items-center bg-secondary text-white";
+        } else if (alert == "info") {
+                toastEl.className = "toast align-items-center bg-info text-white";
+        } else if (alert == "success") {
+                toastEl.className = "toast align-items-center bg-success text-white";
+        } else if (alert == "warning") {
+                toastEl.className = "toast align-items-center bg-warning";
+        } else if (alert == "error") {
+                toastEl.className = "toast align-items-center bg-danger text-white";
+        } else {
+                toastEl.className = "toast align-items-center bg-secondary text-white";
+        }
+
+        toastEl.setAttribute("role", "alert");
+        toastEl.setAttribute("aria-live", "assertive");
+        toastEl.setAttribute("aria-atomic", "true");
+
+        const toastContent = document.createElement("div");
+        toastContent.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${content}
+                </div>
+                <button type="button" class="btn-close me-2 m-auto ${
+                    alert == "debug" || alert == "info" || alert == "success" || alert == "error"
+                        ? "btn-close-white"
+                        : ""
+                }" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        toastEl.appendChild(toastContent);
+        toastContainer.appendChild(toastEl);
+
+        bootstrap.Toast.getOrCreateInstance(toastEl).show();
+    }
+
+
     // =================================================================
     // Vehicle modal form handling
     // =================================================================
@@ -629,8 +671,6 @@
                     if (!vehicleSelect) {
                         // We assume that the vehicleSelect doesn't exist because
                         // there was no vehicle registered yet
-                        console.log(createButton.parentElement)
-
                         const vehicleDiv = createButton.parentElement.parentElement.querySelector(".card");
 
                         vehicleDiv.innerHTML = `
@@ -676,6 +716,8 @@
                         option.dataset.description = data.vehicle.description;
                         option.dataset.seats = data.vehicle.seats;
                         option.dataset.co2 = data.vehicle.geqCO2_per_km;
+
+                        createToast("success", "Vehicle updated successfully!");
                     } else {
                         // Add new option
                         option = document.createElement("option");
@@ -686,14 +728,16 @@
                         option.dataset.seats = data.vehicle.seats;
                         option.dataset.co2 = data.vehicle.geqCO2_per_km;
                         vehicleSelect.appendChild(option);
-                    }
 
+                        createToast("success", "Vehicle added successfully!");
+                    }
+                    
                     // Select the newly added/edited vehicle
                     vehicleSelect.value = data.vehicle.id;
 
                     vehicleModal.hide();
                 })
-                .catch((error) => {w
+                .catch((error) => {
                     alert(error.message);
                 });
         });

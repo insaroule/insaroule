@@ -1,7 +1,5 @@
-{% if messages %}
-<div class="toast-container position-absolute bottom-0 end-0 p-3">
+<div class="toast-container position-absolute bottom-0 end-0 p-3" id="toastContainer">
     {% for message in messages %}
         {% include 'messages/toast.html' with msg_tags=message.tags msg_txt=message %}
     {% endfor %}
 </div>
-{% endif %}
