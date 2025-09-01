@@ -6,9 +6,22 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.gis.geos import GEOSGeometry
 
 from carpool.models.ride import Ride
+from carpool.models import Vehicle
 
 
 MAXIMUM_SEATS_IN_VEHICLE = 8
+
+
+class VehicleForm(forms.ModelForm):
+    seats = forms.IntegerField(
+        required=True,
+        min_value=1,
+        max_value=MAXIMUM_SEATS_IN_VEHICLE,
+    )
+
+    class Meta:
+        model = Vehicle
+        fields = ["name", "description", "seats", "geqCO2_per_km"]
 
 
 class CreateRideForm(forms.Form):

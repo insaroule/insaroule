@@ -89,33 +89,65 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.seats.id_for_label }}">Seats</label>
+                    <label for="{{ form.seats.id_for_label }}">Seats offering</label>
                     {{ form.seats }}
                     {% if form.seats.errors %}
                     <span class="text-danger">{{ form.seats.errors }}</span>
                     {% endif %}
                 </div>
 
-                <div class="mb-3">
-                    <label for="">{% translate "Price and Payment method" %}</label>
+                <div class="mb-2">
+                    <label for="{{ form.price_per_seat.id_for_label }}">
+                        {% translate "Price and Payment method" %}
+                    </label>
                     {{ form.price_per_seat }}
-                
+
                     <div class="mt-1 small text-center">
-                            {% for payment_method in payment_methods %}
-                            <div class="form-check form-check-inline" id="payment-options">
-                                <input class="form-check-input" type="checkbox" id="id_{{ payment_method.0 }}"
-                                    value="{{ payment_method.0 }}" name="payment_method">
-                                <label class="form-check-label" for="id_{{ payment_method.0 }}">
-                                    {{ payment_method.1 }}
-                                </label>
-                            </div>
-                            {% endfor %}
+                        {% for payment_method in payment_methods %}
+                        <div class="form-check form-check-inline" id="payment-options">
+                            <input class="form-check-input" type="checkbox" id="id_{{ payment_method.0 }}"
+                                value="{{ payment_method.0 }}" name="payment_method">
+                            <label class="form-check-label" for="id_{{ payment_method.0 }}">
+                                {{ payment_method.1 }}
+                            </label>
                         </div>
+                        {% endfor %}
+                    </div>
                 </div>
 
 
 
-                
+                <div class="mb-3">
+                    <label for="vehicle" class="d-flex justify-content-between vertical-align mb-1">
+                        <span class="mt-auto">Vehicle</span>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal"
+                            data-bs-target="#vehicleModal" id="createButton">Add a new vehicle</button>
+                    </label>
+                    {% if user.vehicles.all %}
+                    <div class="input-group">
+                        <select class="form-select" name="vehicle" id="vehicle">
+                            {% for vehicle in user.vehicles.all %}
+                            <option value="{{ vehicle.pk }}" data-name="{{ vehicle.name }}"
+                                data-description="{{ vehicle.description }}" data-seats="{{ vehicle.seats }}"
+                                data-co2="{{ vehicle.co2_emissions }}">
+                                {{ vehicle.name }} - {{ vehicle.seats }} {% translate "seats" %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-secondary" type="button" id="editVehicleBtn">
+                            Edit this vehicle
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="card border border-primary" style="border-style: dashed !important;">
+                        <div class="card-body">
+                            You don't have any vehicle registered to your account. Please add one to
+                            publish a ride.
+                        </div>
+                    </div>
+
+                    {% endif %}
+                </div>
 
                 <button class="btn btn-primary w-100" type="submit">
                     {% translate "Publish ride" %}
@@ -123,6 +155,54 @@
             </form>
         </div>
     </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" id="vehicleForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="vehicleModalTitle">Vehicle form</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="vehicle_id" id="vehicle_id">
+
+                    <div class="mb-3">
+                        <label for="vehicle_name">Name<sup class="text-danger">*</sup></label>
+                        <input type="text" name="name" id="vehicle_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="vehicle_description">Visual Description<sup class="text-danger">*</sup></label>
+                        <input type="text" name="description" id="vehicle_description" class="form-control" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="vehicle_seats">Maximum number of seats<sup class="text-danger">*</sup></label>
+                            <input type="text" name="seats" id="vehicle_seats" class="form-control">
+                        </div>
+                        <div class="col">
+                            <label for="vehicle_co2">CO<sub>2</sub> emission (g/km)</label>
+                            <input type="text" name="geqCO2_per_km" id="vehicle_co2" class="form-control">
+                        </div>
+                    </div>
+                    <p class="small text-muted">
+                        You can find the CO<sub>2</sub> emission on your vehicle registration certificate
+                        (in France, it's in the
+                        section V.7).
+                    </p>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+        </form>
+    </div>
+</div>
 </div>
 {% endblock content %} {% block extrascript %}
 <script src="{% static 'vendors/leaflet/leaflet.js' %}" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -292,7 +372,6 @@
                             opacity: 0.7,
                         },
                     }).addTo(map);
-                    // TODO: store duration
 
                     // Update hidden inputs with route information
                     hRouteDuration.value = data.duration;
@@ -441,9 +520,10 @@
             ]);
         }
     });
-</script>
-
-<script>
+    
+    // =================================================================
+    // Automated enabling/disabling of payment method checkboxes
+    // =================================================================
     document.addEventListener("DOMContentLoaded", function () {
         const priceInput = document.getElementById("id_price_per_seat");
         const paymentCheckboxes = document.querySelectorAll(
@@ -463,6 +543,160 @@
 
         priceInput.addEventListener("input", togglePaymentMethodCheckboxes);
     });
+</script>
+
+<script>
+    // =================================================================
+    // Vehicle modal form handling
+    // =================================================================
+    document.addEventListener("DOMContentLoaded", function () {
+        const vehicleModal = new bootstrap.Modal(
+            document.getElementById("vehicleModal"),
+        );
+        const vehicleForm = document.getElementById("vehicleForm");
+        const vehicleModalTitle = document.getElementById("vehicleModalTitle");
+        const createButton = document.getElementById("createButton");
+        const editVehicleBtn = document.getElementById("editVehicleBtn");
+
+        const vehicleIdInput = document.getElementById("vehicle_id");
+        const vehicleNameInput = document.getElementById("vehicle_name");
+        const vehicleDescriptionInput = document.getElementById(
+            "vehicle_description",
+        );
+        const vehicleSeatsInput = document.getElementById("vehicle_seats");
+        const vehicleCO2Input = document.getElementById("vehicle_co2");
+
+        // Open modal in "create" mode
+        createButton.addEventListener("click", function () {
+            vehicleModalTitle.textContent = "Add a new vehicle";
+            vehicleForm.reset();
+            vehicleIdInput.value = "";
+        });
+
+        // Open modal in "edit" mode
+        if (editVehicleBtn) {
+            editVehicleBtn.addEventListener("click", function () {
+                let vehicleSelect = document.getElementById("vehicle");
+                const selectedOption =
+                    vehicleSelect.options[vehicleSelect.selectedIndex];
+
+                if (!selectedOption) {
+                    alert("Please select a vehicle to edit.");
+                    return;
+                }
+
+                vehicleModalTitle.textContent = "Edit vehicle";
+                vehicleIdInput.value = selectedOption.value;
+                vehicleNameInput.value = selectedOption.dataset.name || "";
+                vehicleDescriptionInput.value =
+                    selectedOption.dataset.description || "";
+                vehicleSeatsInput.value = selectedOption.dataset.seats || "";
+                vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+
+                vehicleModal.show();
+            });
+        }
+
+        // Handle form submission
+        vehicleForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(vehicleForm);
+            const url = formData.get("vehicle_id")
+                ? `/api/vehicles/${formData.get("vehicle_id")}/edit/`
+                : "/api/vehicles/new/";
+
+            fetch(url, {
+                method: formData.get("vehicle_id") ? "PUT" : "POST",
+                headers: {
+                    "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+                },
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        return response.json().then((data) => {
+                            throw new Error(
+                                data.error || "Failed to save vehicle",
+                            );
+                        });
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    let vehicleSelect = document.getElementById("vehicle");
+
+                    if (!vehicleSelect) {
+                        // We assume that the vehicleSelect doesn't exist because
+                        // there was no vehicle registered yet
+                        console.log(createButton.parentElement)
+
+                        const vehicleDiv = createButton.parentElement.parentElement.querySelector(".card");
+
+                        vehicleDiv.innerHTML = `
+                            <div class="input-group">
+                                <select class="form-select" name="vehicle" id="vehicle"></select>
+                                <button class="btn btn-secondary" type="button" id="editVehicleBtn">
+                                    Edit this vehicle
+                                </button>
+                            </div>
+                        `;
+                        vehicleSelect = document.getElementById("vehicle");
+                        // Re-attach event listener to the new edit button
+                        document.getElementById("editVehicleBtn").addEventListener("click", function () {
+                            const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+
+                            if (!selectedOption) {
+                                alert("Please select a vehicle to edit.");
+                                return;
+                            }
+
+                            vehicleModalTitle.textContent = "Edit vehicle";
+                            vehicleIdInput.value = selectedOption.value;
+                            vehicleNameInput.value = selectedOption.dataset.name || "";
+                            vehicleDescriptionInput.value = selectedOption.dataset.description || "";
+                            vehicleSeatsInput.value = selectedOption.dataset.seats || "";
+                            vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+
+                            vehicleModal.show();
+                        });
+
+                    }
+
+                    let option = vehicleSelect.querySelector(
+                        `option[value="${data.id}"]`,
+                    );
+
+                    if (option) {
+                        // Update existing option
+                        option.textContent = `${data.name} - ${data.seats} {% translate "seats" %}`;
+                        option.dataset.name = data.name;
+                        option.dataset.description = data.description;
+                        option.dataset.seats = data.seats;
+                        option.dataset.co2 = data.geqCO2_per_km;
+                    } else {
+                        // Add new option
+                        option = document.createElement("option");
+                        option.value = data.id;
+                        option.textContent = `${data.name} - ${data.seats} {% translate "seats" %}`;
+                        option.dataset.name = data.name;
+                        option.dataset.description = data.description;
+                        option.dataset.seats = data.seats;
+                        option.dataset.co2 = data.geqCO2_per_km;
+                        vehicleSelect.appendChild(option);
+                    }
+
+                    // Select the newly added/edited vehicle
+                    vehicleSelect.value = data.id;
+
+                    vehicleModal.hide();
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        });
+    });
+
 </script>
 
 {% endblock extrascript %}

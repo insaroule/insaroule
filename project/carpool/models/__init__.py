@@ -92,19 +92,16 @@ class Vehicle(models.Model):
         blank=False,
     )
 
-    color = models.CharField(
-        verbose_name=_("color"),
-        help_text=_("Color of the vehicle"),
-        max_length=50,
+    description = models.CharField(
+        verbose_name=_("visual description"),
+        help_text=_("Visual description of the vehicle"),
+        max_length=150,
         blank=True,
     )
 
-    # geqCO2_per_km = models.PositiveIntegerField(
-    #     verbose_name=_("geqCO2 per km"),
-    #     help_text=_("Number of grams of CO2 emitted per kilometer"),
-    #     null=False,
-    #     blank=False,
-    # )
-
-    def __str__(self):
-        return f"{self.name} ({self.color})"
+    geqCO2_per_km = models.PositiveIntegerField(
+        verbose_name=_("geqCO2 per km"),
+        help_text=_("Number of grams of CO2 emitted per kilometer"),
+        null=True,
+        blank=True,
+    )

@@ -12,6 +12,8 @@ from carpool.views import (
     rides_detail,
     rides_list,
     rides_subscribe,
+    vehicles_update,
+    vehicles_create,
 )
 
 app_name = "carpool"
@@ -29,4 +31,6 @@ urlpatterns = [
     # API endpoints
     path("api/completion/", api_auto_completion, name="completion"),
     path("api/routing/", api_routing, name="routing"),
+    path("api/vehicles/new/", vehicles_create, name="create_vehicle"),
+    path("api/vehicles/<int:pk>/update/", vehicles_update, name="update_vehicle"),
 ]
