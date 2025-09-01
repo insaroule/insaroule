@@ -129,13 +129,13 @@
                             {% for vehicle in user.vehicles.all %}
                             <option value="{{ vehicle.pk }}" data-name="{{ vehicle.name }}"
                                 data-description="{{ vehicle.description }}" data-seats="{{ vehicle.seats }}"
-                                data-co2="{{ vehicle.co2_emissions }}">
+                                data-co2="{{ vehicle.geqCO2_per_km}}">
                                 {{ vehicle.name }} - {{ vehicle.seats }} {% translate "seats" %}
                             </option>
                             {% endfor %}
                         </select>
                         <button class="btn btn-secondary" type="button" id="editVehicleBtn">
-                            Edit this vehicle
+                            Edit
                         </button>
                     </div>
                     {% else %}
@@ -657,6 +657,8 @@
                             vehicleDescriptionInput.value = selectedOption.dataset.description || "";
                             vehicleSeatsInput.value = selectedOption.dataset.seats || "";
                             vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+
+                            console.log(selectedOption.dataset.co2)
 
                             vehicleModal.show();
                         });
