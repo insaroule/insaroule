@@ -3,24 +3,41 @@
 {% load i18n %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
-<div id="map" style="height: 90vh;"></div>
-<div class="card mb-4 text-bg-light" style="position: absolute; top: 100px; left: 80px; z-index: 1000;">
+<div class="card mb-2 text-bg-light map-filter-card">
     <div class="card-body">
-        <form method="get" action="">
-            <div class="row">
-                <div class="col-lg mb-md-3 mb-lg-0">
-                    <label for="start_dt" class="form-label">Date</label>
-                    <input type="date" id="start_dt" name="start_dt" class="form-control" required>
-                </div>
-                <div class="col-lg mb-md-3 mb-lg-0 position-relative" style="top: 33px">
-                    <button type="button" id="reset-date" class="btn btn-outline-secondary" title="Reset">                        
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-            </div>
-        </form>
+      <form method="get" action="">
+        <label for="start_dt" class="form-label">Date</label>
+        <div class="input-group">
+          <input type="date" id="start_dt" name="start_dt" class="form-control" required>
+          <button type="button" id="reset-date" class="btn btn-outline-secondary" title="Reset">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </form>
     </div>
-</div>
+  </div>
+<div id="map" style="height: 90vh;"></div>
+
+<style>
+    @media (min-width: 769px) {
+        .map-filter-card {
+            position: absolute;
+            top: 100px;
+            left: 80px;
+            z-index: 1000;
+            width: auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .map-filter-card {
+            position: relative !important;
+            margin: 10px;
+            z-index: auto;
+        }
+    }
+</style>
+
 
 <div id="ride-info-card" style="
     position: absolute;

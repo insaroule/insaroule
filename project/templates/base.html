@@ -116,6 +116,34 @@
     <div class="position-relative">
         <img src="{% static 'img/car.png' %}" class="floating-car car">
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const floatingCar = document.querySelector('.floating-car');
+          const floatingClouds = document.querySelectorAll('.floating-cloud');
+      
+          if (floatingCar && floatingClouds.length > 0) {
+            window.addEventListener('scroll', () => {
+              const scrollY = window.scrollY;
+              const visibleHeight = window.innerHeight;
+              const pageHeight = document.documentElement.scrollHeight;
+      
+              if (scrollY + visibleHeight >= pageHeight - 50) {
+                // Masquer la voiture
+                floatingCar.style.display = 'none';
+                // Masquer tous les nuages
+                floatingClouds.forEach(cloud => {
+                  cloud.style.display = 'none';
+                });
+              } else {
+                floatingCar.style.display = '';
+                floatingClouds.forEach(cloud => {
+                  cloud.style.display = '';
+                });
+              }
+            });
+          }
+        });
+      </script>
     {% block extrascript %}{% endblock %}
     {% include 'messages/script.html' %}
 </body>
