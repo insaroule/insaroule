@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-28 23:32+0200\n"
+"POT-Creation-Date: 2025-09-02 08:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -81,13 +81,17 @@ msgid "Report Issue"
 msgstr "Signaler un problème"
 
 #: templates/includes/navbar.html:60
+msgid "Back Office"
+msgstr "Back Office"
+
+#: templates/includes/navbar.html:63
 msgid "Admin Panel"
 msgstr "Panneau d'administration"
 
-#: templates/includes/navbar.html:66
+#: templates/includes/navbar.html:69
 msgid "Moderation"
 msgstr "Modération"
 
-#: templates/includes/navbar.html:75
+#: templates/includes/navbar.html:78
 msgid "Logout"
 msgstr "Se déconnecter"

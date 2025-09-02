@@ -81,7 +81,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.departure_datetime.id_for_label }}">Departure date</label>
+                    <label for="{{ form.departure_datetime.id_for_label }}">{% translate "Departure date" %}</label>
                     {{ form.departure_datetime }}
                     {% if form.departure_datetime.errors %}
                     <span class="text-danger">{{ form.departure_datetime.errors }}</span>
@@ -89,7 +89,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.seats.id_for_label }}">Seats offering</label>
+                    <label for="{{ form.seats.id_for_label }}">{% translate "Seats offering" %}</label>
                     {{ form.seats }}
                     {% if form.seats.errors %}
                     <span class="text-danger">{{ form.seats.errors }}</span>
@@ -119,9 +119,9 @@
 
                 <div class="mb-3">
                     <label for="vehicle" class="d-flex justify-content-between vertical-align mb-1">
-                        <span class="mt-auto">Vehicle</span>
+                        <span class="mt-auto">{% translate "Vehicle" %}</span>
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal"
-                            data-bs-target="#vehicleModal" id="createButton">Add a new vehicle</button>
+                            data-bs-target="#vehicleModal" id="createButton">{% translate "Add a new vehicle" %}</button>
                     </label>
                     {% if user.vehicles.all %}
                     <div class="input-group">
@@ -141,8 +141,7 @@
                     {% else %}
                     <div class="card border border-primary" style="border-style: dashed !important;">
                         <div class="card-body">
-                            You don't have any vehicle registered to your account. Please add one to
-                            publish a ride.
+                            {% translate "You don't have any vehicle registered to your account. Please add one to publish a ride." %}
                         </div>
                     </div>
 
@@ -172,33 +171,34 @@
                     <input type="hidden" name="vehicle_id" id="vehicle_id">
 
                     <div class="mb-3">
-                        <label for="vehicle_name">Name<sup class="text-danger">*</sup></label>
+                        <label for="vehicle_name">{% translate "Name" %}<sup class="text-danger">*</sup></label>
                         <input type="text" name="name" id="vehicle_name" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="vehicle_description">Visual Description<sup class="text-danger">*</sup></label>
+                        <label for="vehicle_description">{% translate "Visual Description" %}<sup class="text-danger">*</sup></label>
                         <input type="text" name="description" id="vehicle_description" class="form-control" required>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label for="vehicle_seats">Maximum number of seats<sup class="text-danger">*</sup></label>
+                            <label for="vehicle_seats">{% translate "Maximum number of seats" %}<sup class="text-danger">*</sup></label>
                             <input type="text" name="seats" id="vehicle_seats" class="form-control">
                         </div>
                         <div class="col">
-                            <label for="vehicle_co2">CO<sub>2</sub> emission (g/km)</label>
+                            <label for="vehicle_co2">{% translate "CO<sub>2</sub> emission (g/km)" %}</label>
                             <input type="text" name="geqCO2_per_km" id="vehicle_co2" class="form-control">
                         </div>
                     </div>
                     <p class="small text-muted">
+                        {% blocktranslate trimmed %}
                         You can find the CO<sub>2</sub> emission on your vehicle registration certificate
-                        (in France, it's in the
-                        section V.7).
+                        (in France, it's in the section V.7).
+                        {% endblocktranslate %}
                     </p>
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                    <button type="submit" class="btn btn-primary">{% translate "Save changes" %}</button>
                 </div>
         </form>
     </div>
@@ -610,7 +610,7 @@
 
         // Open modal in "create" mode
         createButton.addEventListener("click", function () {
-            vehicleModalTitle.textContent = "Add a new vehicle";
+            vehicleModalTitle.textContent = "{% translate 'Add a new vehicle' %}";
             vehicleForm.reset();
             vehicleIdInput.value = "";
         });
@@ -623,11 +623,11 @@
                     vehicleSelect.options[vehicleSelect.selectedIndex];
 
                 if (!selectedOption) {
-                    alert("Please select a vehicle to edit.");
+                    alert("{% translate 'Please select a vehicle to edit.' %}");
                     return;
                 }
 
-                vehicleModalTitle.textContent = "Edit vehicle";
+                vehicleModalTitle.textContent = "{% translate 'Edit vehicle' %}";
                 vehicleIdInput.value = selectedOption.value;
                 vehicleNameInput.value = selectedOption.dataset.name || "";
                 vehicleDescriptionInput.value =
@@ -659,7 +659,7 @@
                     if (!response.ok) {
                         return response.json().then((data) => {
                             throw new Error(
-                                data.error || "Failed to save vehicle",
+                                data.error || "{% translate 'Failed to save vehicle' %}",
                             );
                         });
                     }
@@ -687,11 +687,11 @@
                             const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
 
                             if (!selectedOption) {
-                                alert("Please select a vehicle to edit.");
+                                alert("{% translate 'Please select a vehicle to edit.' %}");
                                 return;
                             }
 
-                            vehicleModalTitle.textContent = "Edit vehicle";
+                            vehicleModalTitle.textContent = "{% translate 'Edit vehicle' %}";
                             vehicleIdInput.value = selectedOption.value;
                             vehicleNameInput.value = selectedOption.dataset.name || "";
                             vehicleDescriptionInput.value = selectedOption.dataset.description || "";
