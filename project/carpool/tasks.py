@@ -2,6 +2,10 @@ import requests
 from celery import shared_task
 from django.conf import settings
 
+from django.contrib.auth import get_user_model
+from carpool.models.statistics import Statistics, MonthlyStatistics
+from carpool.models.ride import Ride
+
 """
 We wanted to use the adresse.data.gouv.fr API, but the service is migrating
 to a new API at data.geopf.fr.
@@ -61,3 +65,56 @@ def get_routing(start, end):
         "error": "Failed to fetch routing information",
         "status_code": r.status_code,
     }
+
+
+@shared_task
+def compute_daily_statistics():
+    """
+    Compute daily statistics for total rides (Statistics model).
+    Compute the current month statistics if not already done (MonthlyStatistics model).
+    """
+    total_rides = Ride.objects.count()
+    total_users = get_user_model().objects.count()
+    total_distance = 0  # Ride.objects.aggregate(total_distance=Sum('distance'))['total_distance'] or 0
+    total_co2 = 0
+
+    if Statistics.objects.count() == 0:
+        # If no statistics exist, create the first entry
+        Statistics.objects.create(
+            total_rides=total_rides,
+            total_users=total_users,
+            total_distance=total_distance,
+            total_co2=total_co2,
+        )
+    else:
+        s = Statistics.objects.first()
+        s.total_rides = total_rides
+        s.total_users = total_users
+        s.total_distance = total_distance
+        s.total_co2 = total_co2
+        s.save()
+
+    # Check if MonthlyStatistics for the current month already exists
+    now = settings.TIMEZONE.now()
+
+    if not MonthlyStatistics.objects.filter(month=now.month, year=now.year).exists():
+        MonthlyStatistics.objects.create(
+            month=now.month,
+            year=now.year,
+            total_rides=0,
+            total_users=0,
+            total_distance=0,
+            total_co2=0,
+        )
+
+    # Update the current month's statistics
+    current_month_rides = Ride.objects.filter(
+        start_dt__year=now.year, start_dt__month=now.month
+    )
+
+    current_month_stats = MonthlyStatistics.objects.get(month=now.month, year=now.year)
+    current_month_stats.total_rides = current_month_rides.count()
+    current_month_stats.total_users = get_user_model().objects.count()
+    current_month_stats.total_distance = 0  # current_month_rides.aggregate(total_distance=Sum('distance'))['total_distance'] or 0
+    current_month_stats.total_co2 = 0
+    current_month_stats.save()

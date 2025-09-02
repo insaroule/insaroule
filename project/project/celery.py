@@ -24,5 +24,9 @@ app.conf.beat_schedule = {
         "schedule": crontab(
             minute=f"*/{settings.EMAIL_NOTIFICATION_THRESHOLD_MINUTES}"
         ),
-    }
+    },
+    "daily-statistics": {
+        "task": "carpool.tasks.compute_daily_statistics",  # Every day at 5:00 AM
+        "schedule": crontab(hour=5, minute=0),
+    },
 }
