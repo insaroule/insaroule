@@ -1,10 +1,14 @@
 import requests
 from celery import shared_task
+from celery.utils.log import get_task_logger
 from django.conf import settings
-
+from django.utils import timezone
 from django.contrib.auth import get_user_model
-from carpool.models.statistics import Statistics, MonthlyStatistics
+
 from carpool.models.ride import Ride
+from carpool.models.statistics import MonthlyStatistics, Statistics
+
+logger = get_task_logger(__name__)
 
 """
 We wanted to use the adresse.data.gouv.fr API, but the service is migrating
@@ -78,7 +82,12 @@ def compute_daily_statistics():
     total_distance = 0  # Ride.objects.aggregate(total_distance=Sum('distance'))['total_distance'] or 0
     total_co2 = 0
 
+    logger.info(
+        "Computing daily statistics: %d rides, %d users", total_rides, total_users
+    )
+
     if Statistics.objects.count() == 0:
+        logger.info("No statistics found, creating the first entry.")
         # If no statistics exist, create the first entry
         Statistics.objects.create(
             total_rides=total_rides,
@@ -87,6 +96,7 @@ def compute_daily_statistics():
             total_co2=total_co2,
         )
     else:
+        logger.info("Updating existing statistics entry.")
         s = Statistics.objects.first()
         s.total_rides = total_rides
         s.total_users = total_users
@@ -95,7 +105,7 @@ def compute_daily_statistics():
         s.save()
 
     # Check if MonthlyStatistics for the current month already exists
-    now = settings.TIMEZONE.now()
+    now = timezone.now()
 
     if not MonthlyStatistics.objects.filter(month=now.month, year=now.year).exists():
         MonthlyStatistics.objects.create(
