@@ -2,8 +2,10 @@ import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.contrib.gis.db.models.functions import Length
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
+from django.utils import timezone
 
 from carpool.models.ride import Ride
 from carpool.models.statistics import MonthlyStatistics, Statistics
@@ -77,13 +79,37 @@ def compute_daily_statistics():
     Compute daily statistics for total rides (Statistics model).
     Compute the current month statistics if not already done (MonthlyStatistics model).
     """
-    total_rides = Ride.objects.count()
+
+    rides = Ride.objects.annotate(
+        distance_km=ExpressionWrapper(
+            Length("geometry", spheroid=True) / 1000.0,
+            output_field=FloatField(),
+        ),
+        rider_count=Count("rider", distinct=True),
+    ).annotate(
+        spared_co2_kg=ExpressionWrapper(
+            F("rider_count") * F("distance_km") * F("vehicle__geqCO2_per_km") / 1000,
+            output_field=FloatField(),
+        )
+    )
+
+    totals = rides.aggregate(
+        total_distance=Sum("distance_km"), total_co2=Sum("spared_co2_kg")
+    )
+
+    total_rides = rides.count()
     total_users = get_user_model().objects.count()
-    total_distance = 0  # Ride.objects.aggregate(total_distance=Sum('distance'))['total_distance'] or 0
-    total_co2 = 0
+    total_distance = totals["total_distance"] or 0
+
+    logger.info("Total co2 %s", totals["total_co2"])
+    total_co2 = totals["total_co2"] or 0
 
     logger.info(
-        "Computing daily statistics: %d rides, %d users", total_rides, total_users
+        "Computing daily statistics: %d rides, %d users  %d meters, %d kg",
+        total_rides,
+        total_users,
+        total_distance,
+        total_co2,
     )
 
     if Statistics.objects.count() == 0:
@@ -104,10 +130,12 @@ def compute_daily_statistics():
         s.total_co2 = total_co2
         s.save()
 
+    logger.info("Checking monthly statistics for the current month.")
     # Check if MonthlyStatistics for the current month already exists
     now = timezone.now()
 
     if not MonthlyStatistics.objects.filter(month=now.month, year=now.year).exists():
+        logger.info("No monthly statistics for the current month, creating one.")
         MonthlyStatistics.objects.create(
             month=now.month,
             year=now.year,
@@ -118,13 +146,27 @@ def compute_daily_statistics():
         )
 
     # Update the current month's statistics
-    current_month_rides = Ride.objects.filter(
-        start_dt__year=now.year, start_dt__month=now.month
+    current_month_rides = (
+        Ride.objects.filter(start_dt__year=now.year, start_dt__month=now.month)
+        .annotate(distance_km=Length("geometry", spheroid=True))
+        .annotate(
+            spared_co2_kg=ExpressionWrapper(
+                Count("rider") * F("distance_km") * F("vehicle__geqCO2_per_km") / 1000,
+                output_field=FloatField(),
+            )
+        )
     )
+
+    total_distance = current_month_rides.aggregate(total_distance=Sum("distance_km"))[
+        "total_distance"
+    ]
+    total_co2 = current_month_rides.aggregate(total_co2=Sum("spared_co2_kg"))[
+        "total_co2"
+    ]
 
     current_month_stats = MonthlyStatistics.objects.get(month=now.month, year=now.year)
     current_month_stats.total_rides = current_month_rides.count()
     current_month_stats.total_users = get_user_model().objects.count()
-    current_month_stats.total_distance = 0  # current_month_rides.aggregate(total_distance=Sum('distance'))['total_distance'] or 0
-    current_month_stats.total_co2 = 0
+    current_month_stats.total_distance = total_distance.km
+    current_month_stats.total_co2 = total_co2 / 1000  # convert to kg
     current_month_stats.save()

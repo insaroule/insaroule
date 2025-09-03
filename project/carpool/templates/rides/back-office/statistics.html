@@ -15,7 +15,7 @@
     
     <div class="row">
         <div class="col-xl col-md-6 mb-3">
-            <div class="card border border-5 border-primary border-end-0 border-top-0 border-bottom-0 shadow py-2">
+            <div class="card border border-5 border-primary border-end-0 border-top-0 border-bottom-0 shadow py-2 h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -49,14 +49,14 @@
             </div>
         </div>
         <div class="col-xl col-md-6 mb-3">
-            <div class="card border border-5 border-info border-end-0 border-top-0 border-bottom-0 shadow py-2">
+            <div class="card border border-5 border-info border-end-0 border-top-0 border-bottom-0 shadow py-2 h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs fw-bold text-info text-uppercase mb-1">
                                 {% translate "Total distance (km)" %}
                             </div>
-                            <div class="h5 mb-0 fw-bold text-body-secondary">{{ total_distance|default:0 }}</div>
+                            <div class="h5 mb-0 fw-bold text-body-secondary">{{ total_distance|floatformat:2|default:0 }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-signpost-split-fill text-body-tertiary display-5 pe-3"></i>
@@ -66,14 +66,14 @@
             </div>
         </div>
         <div class="col-xl col-md-6 mb-3">
-            <div class="card border border-5 border-success border-end-0 border-top-0 border-bottom-0 shadow py-2">
+            <div class="card border border-5 border-success border-end-0 border-top-0 border-bottom-0 shadow py-2 h-100">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs fw-bold text-success text-uppercase mb-1">
                                 {% translate "Spared CO<sub>2</sub> (in kg)" %}
                             </div>
-                            <div class="h5 mb-0 fw-bold text-body-secondary">{{ total_co2|default:0 }}</div>
+                            <div class="h5 mb-0 fw-bold text-body-secondary">{{ total_co2|floatformat:2|default:0 }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="bi bi-leaf-fill text-body-tertiary display-5 pe-3"></i>
@@ -102,6 +102,8 @@
                 const labels = data.labels;
                 const rideCounts = data.monthly_total_rides;
                 const co2Saved = data.monthly_total_co2;
+                const usersCounts = data.monthly_total_users;
+                const distanceCounts = data.monthly_total_distance;
 
                 new Chart(ctx, {
                     type: 'bar',
@@ -109,17 +111,23 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Nombre de trajets',
+                                label: 'Rides count',
                                 data: rideCounts,
                                 borderWidth: 1,
                                 yAxisID: 'y'
                             },
                             {
-                                label: 'CO2 économisé (en kg)',
+                                label: 'Spared CO2 (in kg)',
                                 data: co2Saved,
                                 borderWidth: 1,
                                 yAxisID: 'y1'
-                            }
+                            },
+                            {
+                                label: 'Users',
+                                data: usersCounts,
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                            },
                         ]
                     },
                     options: {
@@ -130,7 +138,6 @@
                                 position: 'left',
                                 title: {
                                     display: true,
-                                    text: 'Nombre de trajets'
                                 }
                             },
                             // scale for CO2 saved
@@ -142,7 +149,7 @@
                                 },
                                 title: {
                                     display: true,
-                                    text: 'CO2 économisé (en kg)'
+                                    text: 'kg'
                                 }
                             }
                         }
