@@ -90,9 +90,9 @@
 
                 <div class="mb-3">
                     <label for="{{ form.seats.id_for_label }}">{% translate "Seats offering" %}</label>
-                    {{ form.seats }}
-                    {% if form.seats.errors %}
-                    <span class="text-danger">{{ form.seats.errors }}</span>
+                    {{ form.seats_offered }}
+                    {% if form.seats_offered.errors %}
+                    <span class="text-danger">{{ form.seats_offered.errors }}</span>
                     {% endif %}
                 </div>
 

@@ -11,6 +11,8 @@ from django.contrib.gis.measure import D
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
+from django.core.exceptions import PermissionDenied
+
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
@@ -41,14 +43,11 @@ def bo_statistics_json_monthly(request):
         labels.append(f"{month:02d}-{start_year}")
     for month in range(1, 9):
         labels.append(f"{month:02d}-{start_year + 1}")
-    print(start_year)
     monthly_stats = MonthlyStatistics.objects.filter_by_academic_year(start_year)
     monthly_total_rides = [stat.total_rides for stat in monthly_stats]
     monthly_total_users = [stat.total_users for stat in monthly_stats]
     monthly_total_distance = [stat.total_distance for stat in monthly_stats]
     monthly_total_co2 = [stat.total_co2 for stat in monthly_stats]
-
-    print(monthly_stats)
 
     data = {
         "labels": labels,
@@ -404,17 +403,22 @@ def rides_create(request):
                 lat=form.cleaned_data["a_latitude"],
                 lng=form.cleaned_data["a_longitude"],
             )[0]
-            vehicle, _ = Vehicle.objects.get_or_create(
-                name="default",
-                driver=request.user,
-                seats=form.cleaned_data["seats"],
-            )
+
+            vehicle = form.cleaned_data["vehicle"]
+            print(vehicle)
+
+            if vehicle and vehicle.driver != request.user:
+                raise PermissionDenied("You are not the driver of this vehicle")
+
+            vehicle = get_object_or_404(Vehicle, pk=vehicle.pk)
+
             ride = Ride.objects.create(
                 driver=request.user,
                 start_dt=form.cleaned_data["departure_datetime"],
                 end_dt=form.cleaned_data["departure_datetime"]
                 + datetime.timedelta(hours=form.cleaned_data["r_duration"]),
                 start_loc=departure,
+                seats_offered=form.cleaned_data["seats_offered"],
                 vehicle=vehicle,
                 end_loc=arrival,
                 payment_method=form.cleaned_data["payment_method"],
@@ -422,7 +426,6 @@ def rides_create(request):
                 geometry=GEOSGeometry(form.cleaned_data["r_geometry"], srid=4326),
                 duration=datetime.timedelta(hours=form.cleaned_data["r_duration"]),
             )
-
             return redirect("carpool:detail", pk=ride.pk)
 
     context = {

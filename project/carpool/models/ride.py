@@ -6,6 +6,8 @@ from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
+
 
 from multiselectfield import MultiSelectField
 
@@ -132,6 +134,13 @@ class Ride(models.Model):
         blank=True,
     )
 
+    seats_offered = models.PositiveIntegerField(
+        verbose_name=_("seats offered"),
+        help_text=_("Number of seats offered for the ride"),
+        validators=[MinValueValidator(1)],
+        default=1,
+    )
+
     vehicle = models.ForeignKey(
         verbose_name=_("vehicle"),
         to="carpool.Vehicle",
@@ -159,7 +168,7 @@ class Ride(models.Model):
 
     @property
     def remaining_seats(self):
-        return self.vehicle.seats - self.rider.count()
+        return self.seats_offered - self.rider.count()
 
     @property
     def booked_seats(self):
@@ -172,3 +181,14 @@ class Ride(models.Model):
         permissions = [
             ("view_ride_statistics", "Can view ride statistics"),
         ]
+
+    def clean(self):
+        # Check that seats_oferred is lower or equal to vehicle.seats
+        if self.vehicle and self.seats_offered > self.vehicle.seats:
+            raise ValidationError(
+                {
+                    "seats_offered": _(
+                        "Seats offered cannot be greater than vehicle seats."
+                    )
+                }
+            )
