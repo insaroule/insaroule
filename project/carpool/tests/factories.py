@@ -30,7 +30,7 @@ class VehicleFactory(factory.django.DjangoModelFactory):
 
     driver = factory.SubFactory("carpool.tests.factories.UserFactory")
     seats = random.randint(1, 8)
-    color = factory.Faker("color")
+    geqCO2_per_km = random.randint(50, 300)
     name = "default"
 
 
