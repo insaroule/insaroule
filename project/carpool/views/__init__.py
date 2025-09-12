@@ -1,8 +1,6 @@
 import datetime
 import json
-import logging
 
-from asgiref.sync import sync_to_async
 from chat.models import ChatRequest
 from chat.tasks import send_email_confirmed_ride, send_email_declined_ride
 from django.conf import settings
@@ -15,83 +13,16 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Count, ExpressionWrapper, F, IntegerField
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.timezone import localtime
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
-from carpool.forms import CreateRideForm, EditRideForm, VehicleForm
+from carpool.forms import CreateRideForm, EditRideForm
 from carpool.models import Location, Vehicle
 from carpool.models.ride import Ride
-from carpool.tasks import get_autocompletion, get_routing
-
-
-@login_required
-def vehicles_create(request):
-    form = VehicleForm()
-    if request.method == "POST":
-        form = VehicleForm(request.POST)
-        if form.is_valid():
-            vehicle = form.save(commit=False)
-            vehicle.driver = request.user
-            vehicle.save()
-            logging.info(f"Vehicle {vehicle.pk} created by user {request.user.pk}")
-            return JsonResponse(
-                {
-                    "status": "OK",
-                    "vehicle": {
-                        "id": vehicle.pk,
-                        "name": vehicle.name,
-                        "description": vehicle.description,
-                        "seats": vehicle.seats,
-                        "geqCO2_per_km": vehicle.geqCO2_per_km,
-                    },
-                },
-                status=201,
-            )
-        else:
-            logging.error(f"Vehicle creation form invalid: {form.errors}")
-            return JsonResponse({"status": "NOK", "errors": form.errors}, status=400)
-    return JsonResponse(
-        {"status": "NOK", "error": "Invalid request method"}, status=400
-    )
-
-
-@login_required
-def vehicles_update(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk)
-    if vehicle.driver != request.user:
-        return JsonResponse(
-            {"status": "NOK", "error": "You are not the driver of this vehicle"},
-            status=403,
-        )
-
-    form = VehicleForm(instance=vehicle)
-    if request.method == "POST":
-        form = VehicleForm(request.POST, instance=vehicle)
-        if form.is_valid():
-            form.save()
-            logging.info(f"Vehicle {vehicle.pk} updated by user {request.user.pk}")
-            return JsonResponse(
-                {
-                    "status": "OK",
-                    "vehicle": {
-                        "id": vehicle.pk,
-                        "name": vehicle.name,
-                        "description": vehicle.description,
-                        "seats": vehicle.seats,
-                        "geqCO2_per_km": vehicle.geqCO2_per_km,
-                    },
-                },
-                status=201,
-            )
-        return JsonResponse({"status": "NOK", "errors": form.errors}, status=400)
-
-    return JsonResponse(
-        {"status": "NOK", "error": "Invalid request method"}, status=400
-    )
 
 
 @login_required
@@ -385,29 +316,3 @@ def rides_create(request):
         "payment_methods": Ride.PaymentMethod.choices,
     }
     return render(request, "rides/create.html", context)
-
-
-@login_required
-async def api_auto_completion(request) -> JsonResponse:
-    """An async API proxy endpoint to get latitude and
-    longitude for a given query.
-    """
-    text = request.GET.get("text", "")
-    if not text:
-        return JsonResponse({"status": "NOK"}, status=400)
-
-    task = get_autocompletion.delay(text)
-    result = await sync_to_async(task.get)(timeout=5)  # blocking I/O offloaded
-    return JsonResponse({"status": "OK", "results": result}, safe=False, status=200)
-
-
-@login_required
-async def api_routing(request) -> JsonResponse:
-    """An async API proxy endpoint to get routing information."""
-    start = request.GET.get("start", "")
-    end = request.GET.get("end", "")
-    if not start or not end:
-        return JsonResponse({"status": "NOK"}, status=400)
-    task = get_routing.delay(start, end)
-    res = await sync_to_async(task.get)(timeout=5)  # blocking I/O offloaded
-    return JsonResponse(res, safe=False)

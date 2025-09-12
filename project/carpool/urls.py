@@ -1,8 +1,6 @@
 from django.urls import path
 
 from carpool.views import (
-    api_auto_completion,
-    api_routing,
     change_jrequest_status,
     list_my_rides,
     ride_map,
@@ -12,10 +10,10 @@ from carpool.views import (
     rides_edit,
     rides_list,
     rides_subscribe,
-    vehicles_create,
-    vehicles_update,
 )
+from carpool.views import api as api_views
 from carpool.views import backoffice as bo_views
+from carpool.views import vehicle as vehicle_views
 
 app_name = "carpool"
 
@@ -29,12 +27,16 @@ urlpatterns = [
     path("map/", ride_map, name="map"),
     path("<uuid:pk>/subscribe/", rides_subscribe, name="subscribe"),
     path("jr/<uuid:jr_pk>/status/", change_jrequest_status, name="change_jr_status"),
-    # API endpoints
-    path("api/completion/", api_auto_completion, name="completion"),
-    path("api/routing/", api_routing, name="routing"),
-    path("api/vehicles/new/", vehicles_create, name="create_vehicle"),
-    path("api/vehicles/<int:pk>/update/", vehicles_update, name="update_vehicle"),
 ]
+
+# API endpoints
+urlpatterns += [
+    path("api/vehicles/new/", vehicle_views.create, name="create_vehicle"),
+    path("api/vehicles/<int:pk>/update/", vehicle_views.update, name="update_vehicle"),
+    path("api/completion/", api_views.autocompletion, name="completion"),
+    path("api/routing/", api_views.routing, name="routing"),
+]
+
 
 # Back office specific URLs
 urlpatterns += [
