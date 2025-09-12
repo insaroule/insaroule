@@ -167,9 +167,7 @@ def list_my_rides(request):
 
 @login_required
 def ride_map(request):
-    rides = Ride.objects.filter(
-        start_dt__date__gte=datetime.date.today(),
-    )
+    rides = Ride.objects.filter_upcoming()
     rides_geo = []
 
     for ride in rides:
@@ -311,9 +309,7 @@ def rides_list(request):
         return redirect(f"{reverse('accounts:login')}?next={request.path}")
 
     # Get all rides that are whether today's date or in the future
-    rides = Ride.objects.filter(
-        start_dt__date__gte=datetime.date.today(),
-    )
+    rides = Ride.objects.filter_upcoming()
 
     # ====================================================== #
     # Filters

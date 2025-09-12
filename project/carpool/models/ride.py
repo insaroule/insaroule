@@ -1,14 +1,12 @@
 from uuid import uuid4
 
 from django.contrib.gis.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-
-
 from multiselectfield import MultiSelectField
 
 
@@ -39,6 +37,16 @@ class RideManager(models.Manager):
             ride.delete()
             return True
         return False
+
+    def filter_upcoming(self):
+        """
+        Function to filter upcoming rides.
+        An upcoming ride is defined as a ride that starts today or in the future.
+        (date part only, time is ignored)
+        """
+        return self.filter(
+            start_dt__date__gte=timezone.now().date(),
+        )
 
 
 class Ride(models.Model):
