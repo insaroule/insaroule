@@ -165,22 +165,8 @@
             <div class="card">
                 <div class="card-header">{% translate "Reservation" %}</div>
                 <div class="card-body">
-                    {% if not reservation %}
-                    <form action="{% url 'carpool:subscribe' join_request.ride.pk %}" method="post">
-                        {% csrf_token %}
-                        <p>
-                            {% blocktrans trimmed %}
-                            To make a reservation on this ride, you need to make a request by clicking the button below.
-                            The
-                            driver will then accept or decline your request.
-                            {% endblocktrans %}
-                        </p>
-
-                        <button type="submit" class="btn btn-primary w-100">
-                            Make a reservation
-                        </button>
-                    </form>
-                    {% else %}
+                    {% if reservation.status == 'ACCEPTED' or reservation.status == 'PENDING' or reservation.status == 'DECLINED' %}
+                    
                     <span class="text-muted">
                         You have already made a reservation for this ride. The driver will accept or decline your
                         request.
@@ -199,13 +185,33 @@
                         {% elif reservation.status == "COMPLETED" %}
                         {% endif %}
                     </div>
-                    <!-- <div class="ms-auto">
-                        <a href=""
-                            class="btn btn-outline-danger w-100 {% if reservation.status == 'DECLINED' or reservation.status == 'CANCELED' %}disabled{% endif %}">
-                            {% translate "Cancel my reservation" %}
-                        </a>
-                    </div> -->
+                    <div class="ms-auto">
+                        <form action="{% url 'carpool:cancel_reservation' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="reservation_pk" value="{{ reservation.pk }}">
+                            <button type="submit" class="btn btn-outline-danger w-100 {% if reservation.status == 'DECLINED' or reservation.status == 'CANCELED' %}disabled{% endif %}">
+                                {% translate "Cancel my reservation" %}
+                            </button>
+
+
+                        </form>
+                    </div>
                 </div>
+                    {% else %}
+                    <form action="{% url 'carpool:subscribe' join_request.ride.pk %}" method="post">
+                        {% csrf_token %}
+                        <p>
+                            {% blocktrans trimmed %}
+                            To make a reservation on this ride, you need to make a request by clicking the button below.
+                            The
+                            driver will then accept or decline your request.
+                            {% endblocktrans %}
+                        </p>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            {% translate "Make a reservation" %}
+                        </button>
+                    </form>
                 {% endif %}
             </div>
         </div>

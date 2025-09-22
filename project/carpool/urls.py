@@ -2,6 +2,7 @@ from django.urls import path
 
 from carpool.views import (
     update_reservation,
+    cancel_reservation,
     list_my_rides,
     ride_map,
     rides_create,
@@ -32,6 +33,7 @@ urlpatterns = [
 
 # API endpoints
 urlpatterns += [
+    path("api/reservations/cancel/", cancel_reservation, name="cancel_reservation"),
     path("api/reservations/update/", update_reservation, name="update_reservation"),
     path("api/vehicles/new/", vehicle_views.create, name="create_vehicle"),
     path("api/vehicles/<int:pk>/update/", vehicle_views.update, name="update_vehicle"),

@@ -85,6 +85,35 @@ def ride_map(request):
 
 
 @require_http_methods(["POST"])
+@login_required
+def cancel_reservation(request):
+    reservation = get_object_or_404(Reservation, pk=request.POST.get("reservation_pk"))
+    next_url = request.GET.get("next", reverse("chat:index"))
+
+    if request.user != reservation.user:
+        # Only the user who made the reservation can cancel it
+        return HttpResponse(
+            "You are not allowed to cancel this reservation", status=403
+        )
+
+    if reservation.status == Reservation.Status.CANCELED:
+        messages.warning(request, "This reservation is already canceled.")
+        return HttpResponse("This reservation is already canceled", status=400)
+
+    reservation.status = Reservation.Status.CANCELED
+
+    if reservation.user in reservation.ride.rider.all():
+        # Check if the user is already in the ride's riders
+        messages.warning(request, "You have been removed from the ride's riders.")
+        reservation.ride.rider.remove(reservation.user)
+
+    messages.warning(request, "You have successfully canceled your reservation.")
+    reservation.save()
+    return redirect(next_url)
+
+
+@require_http_methods(["POST"])
+@login_required
 def update_reservation(request):
     reservation = get_object_or_404(Reservation, pk=request.POST.get("reservation_pk"))
     next_url = request.GET.get("next", reverse("chat:index"))

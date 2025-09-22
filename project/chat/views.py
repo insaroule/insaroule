@@ -186,9 +186,7 @@ def room(request, jr_pk):
         with_user = join_request.user
 
     shared_ride_count = Ride.objects.count_shared_ride(request.user, with_user)
-    reservation = join_request.ride.reservations.filter(
-        user=join_request.user, status__in=["PENDING", "ACCEPTED", "DECLINED"]
-    ).first()
+    reservation = join_request.ride.reservations.filter(user=join_request.user).first()
 
     context = {
         "with_user": with_user,

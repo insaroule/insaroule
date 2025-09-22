@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-22 16:42+0200\n"
+"POT-Creation-Date: 2025-09-22 16:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,7 +354,9 @@ msgstr "Durée du trajet"
 
 #: carpool/models/ride.py:199
 msgid "Seats offered cannot be greater than vehicle seats."
-msgstr "Le nombre de places offertes ne peut pas être supérieur au nombre de places dans le véhicule."
+msgstr ""
+"Le nombre de places offertes ne peut pas être supérieur au nombre de places "
+"dans le véhicule."
 
 #: carpool/models/statistics.py:24
 msgid "Statistic"
@@ -618,25 +620,24 @@ msgstr "Trajets souscrits"
 msgid "You don't have subscribed to any rides."
 msgstr "Vous n'êtes inscrit à aucun trajet."
 
-#: carpool/views/__init__.py:128
+#: carpool/views/__init__.py:155
 msgid "You have already booked this ride."
 msgstr "Vous avez déjà réservé ce trajet."
 
-#: carpool/views/__init__.py:134
+#: carpool/views/__init__.py:161
 msgid "You have successfully booked this ride."
 msgstr "Vous avez réservé ce trajet avec succès."
 
-#: carpool/views/__init__.py:180
+#: carpool/views/__init__.py:207
 msgid "You successfully updated the ride."
 msgstr "Vous avez mis à jour le trajet avec succès."
 
-#: carpool/views/__init__.py:197
+#: carpool/views/__init__.py:224
 msgid "You successfully deleted the ride."
 msgstr "Vous avez supprimé le trajet avec succès."
 
-#: carpool/views/__init__.py:202
+#: carpool/views/__init__.py:229
 msgid "You cannot delete this ride because it has riders and is not over yet."
 msgstr ""
 "Vous ne pouvez pas supprimer ce trajet car il a des passagers et n'est pas "
 "encore terminé."
-
