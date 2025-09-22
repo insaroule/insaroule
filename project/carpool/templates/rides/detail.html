@@ -127,12 +127,12 @@
                 </div>
                 {% if not ride.driver == user %}
                     {% if not chat_request %}
-                        <form action="{% url 'carpool:subscribe' ride.pk %}" method="post">
+                        <form action="{% url 'carpool:chat' ride.pk %}" method="post">
                             {% csrf_token %}
-                            <button class="btn btn-primary w-100 {% if already_booked %}disabled{% endif %}" type="submit">{% translate "Subscribe" %}</button>
+                            <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
                         </form>
                     {% else %}
-                        <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">{% translate "See the request" %}</a>
+                        <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">{% translate "See the discussion" %}</a>
                     {% endif %}
                 {% else %}
                 <div class="d-flex flex-row gap-3">

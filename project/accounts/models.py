@@ -34,6 +34,10 @@ class User(AbstractUser):
 
 
 class UserNotificationPreferences(models.Model):
+    class Meta:
+        verbose_name = "User notification preferences"
+        verbose_name_plural = "User notification preferences"
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,

@@ -2,7 +2,7 @@ import datetime
 import json
 
 from chat.models import ChatRequest
-from chat.tasks import send_email_confirmed_ride, send_email_declined_ride
+from carpool.tasks import send_email_confirmed_ride, send_email_declined_ride
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -22,7 +22,10 @@ from django.views.decorators.http import require_http_methods
 
 from carpool.forms import CreateRideForm, EditRideForm
 from carpool.models import Location, Vehicle
+from carpool.models.reservation import Reservation
 from carpool.models.ride import Ride
+
+import logging
 
 
 @login_required
@@ -82,45 +85,62 @@ def ride_map(request):
 
 
 @require_http_methods(["POST"])
-def change_jrequest_status(request, jr_pk):
-    join_request = get_object_or_404(ChatRequest, pk=jr_pk)
+def update_reservation(request):
+    reservation = get_object_or_404(Reservation, pk=request.POST.get("reservation_pk"))
+    next_url = request.GET.get("next", reverse("chat:index"))
 
-    if request.user != join_request.ride.driver:
-        return HttpResponse("You are not the driver of this post", status=403)
+    if request.user != reservation.ride.driver:
+        return HttpResponse("You are not the driver of this ride", status=403)
 
     action = request.POST.get("action")
+
     if action == "accept":
-        join_request.status = ChatRequest.Status.ACCEPTED
-        # Send an email to the user to notify them that their request has been accepted
-        send_email_confirmed_ride.delay(join_request.pk)
-        # Add the user to the ride
-        join_request.ride.rider.add(join_request.user)
+        reservation.status = Reservation.Status.ACCEPTED
+        send_email_confirmed_ride.delay(reservation.pk)
+        reservation.ride.rider.add(reservation.user)
 
     elif action == "decline":
-        join_request.status = ChatRequest.Status.DECLINED
-        # Remove the user to the ride if they were added
-        if join_request.user in join_request.ride.rider.all():
-            join_request.ride.rider.remove(join_request.user)
-        # Send an email to the user to notify them that their request has been declined
-        send_email_declined_ride.delay(join_request.pk)
+        reservation.status = Reservation.Status.DECLINED
+        if reservation.user in reservation.ride.rider.all():
+            # Check if the user is already in the ride's riders
+            reservation.ride.rider.remove(reservation.user)
 
+        send_email_declined_ride.delay(reservation.pk)
     else:
         return HttpResponse("Invalid action", status=400)
 
-    join_request.save()
-    return redirect("chat:index")
+    reservation.save()
+    return redirect(next_url)
 
 
 @login_required
-def rides_subscribe(request, pk):
-    ride = get_object_or_404(Ride, pk=pk)
+def rides_subscribe(request, ride_pk):
+    """Create a reservation for the given ride."""
+    ride = get_object_or_404(Ride, pk=ride_pk)
     if request.method == "POST":
-        if ChatRequest.objects.filter(user=request.user, ride=ride).exists():
-            messages.error(request, _("You have already requested to join this ride."))
+        # Get the chat request
+        ChatRequest.objects.get(user=request.user, ride=ride)
+
+        if Reservation.objects.filter(
+            user=request.user, ride=ride, status__in=["DECLINED", "ACCEPTED"]
+        ).exists():
+            logging.warning(f"User {request.user} has already booked ride {ride.pk}")
+            messages.error(request, _("You have already booked this ride."))
             return redirect("carpool:detail", pk=ride.pk)
 
-        ride.join_requests.create(user=request.user)
+        # Subscribe the user to the ride
+        ride.reservations.create(user=request.user)
+        logging.info(f"User {request.user} booked ride {ride.pk}")
+        messages.success(request, _("You have successfully booked this ride."))
+
+        # Redirect to chat:room with join_request associated to this user and ride
+        join_request = ChatRequest.objects.filter(user=request.user, ride=ride).first()
+        if join_request:
+            return redirect("chat:room", jr_pk=join_request.pk)
         return redirect("chat:index")
+
+        messages.info(request, "You subscribed to this ride.")
+
     return redirect("carpool:detail", pk=ride.pk)
 
 
@@ -128,12 +148,16 @@ def rides_subscribe(request, pk):
 def rides_detail(request, pk):
     # Check if the user has already booked this ride
     # used to disabled the subscribe button
+    reservation = request.user.reservations.filter(
+        ride__pk=pk, status__in=["PENDING", "ACCEPTED", "DECLINED"]
+    ).first()
     chat_request = ChatRequest.objects.filter(user=request.user, ride__pk=pk).first()
 
     ride = get_object_or_404(Ride, pk=pk)
     context = {
         "ride": ride,
         "geometry": ride.geometry.geojson,
+        "reservation": reservation,
         "chat_request": chat_request,
     }
 

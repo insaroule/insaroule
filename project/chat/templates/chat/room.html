@@ -19,14 +19,16 @@
             <div class="card" style="min-height: 80vh;">
                 <div class="card-header d-flex justify-content-between">
                     <span>{{ join_request.ride.start_dt }} ({{ join_request.ride.start_loc.city }} &RightArrow;
-                    {{ join_request.ride.end_loc.city }})</span>
+                        {{ join_request.ride.end_loc.city }})</span>
                     <div class="dropdown ms-auto">
                         <i class="bi bi-three-dots-vertical" data-bs-toggle="dropdown" aria-expanded="false"></i>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
                                 <form action="{% url 'chat:report' join_request.pk %}" method="post">
                                     {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">{% translate "Report the conversation" %}</button>
+                                    <button type="submit" class="dropdown-item">
+                                        {% translate "Report the conversation" %}
+                                    </button>
                                 </form>
                             </li>
                         </ul>
@@ -43,7 +45,8 @@
                         </svg>
                     </div>
 
-                    <div id="chat-log" class="p-3 d-flex flex-column gap-2" style="max-height: 65vh; overflow-y: auto;"></div>
+                    <div id="chat-log" class="p-3 d-flex flex-column gap-2" style="max-height: 65vh; overflow-y: auto;">
+                    </div>
                 </div>
                 <div class="card-footer bg-white">
                     <div class="input-group input-group">
@@ -60,19 +63,19 @@
                 <div class="card-body">
                     <a href="{{ join_request.ride.get_absolute_url }}" class="stretched-link"></a>
                     <div class="d-flex flex-row gap-3">
-                        <img src="{% static 'img/avatar.jpg' %}"
-                            class="rounded-circle" width="70" />
+                        <img src="{% static 'img/avatar.jpg' %}" class="rounded-circle my-auto" width="70"
+                            height="70" />
                         <div class="d-flex flex-column">
                             <span class="fs-4">{{ with_user.username }}</span>
                             <span class="small text-muted d-block mb-2 d-flex justify-content-center">
                                 {% if shared_ride_count == 0 %}
-                                    {% translate "You have never ride with this user." %}
+                                {% translate "You have never ride with this user." %}
                                 {% else %}
                                 {% blocktranslate trimmed count counter=shared_ride_count %}
-                                    You have already shared {{ counter }} ride with this user.
-                                    {% plural %}
-                                    You have already shared {{ counter }} rides with this user.
-                                    {% endblocktranslate %}
+                                You have already shared {{ counter }} ride with this user.
+                                {% plural %}
+                                You have already shared {{ counter }} rides with this user.
+                                {% endblocktranslate %}
                                 {% endif %}
                             </span>
                         </div>
@@ -83,7 +86,8 @@
                             <div class="d-flex flex-row">
                                 <div class="d-flex flex-column me-2 gap-1">
                                     <span class="fw-semibold">{{ join_request.ride.start_dt|date:"H:i" }}</span>
-                                    <span class="text-muted small text-end">{{ join_request.ride.duration|duration }}</span>
+                                    <span
+                                        class="text-muted small text-end">{{join_request.ride.duration|duration}}</span>
                                     <span class="fw-semibold">{{ join_request.ride.end_dt|date:"H:i" }}</span>
                                 </div>
                                 <div class="d-flex flex-column mx-1 my-1">
@@ -101,11 +105,11 @@
                         <div class="d-flex flex-column align-items-end gap-2">
                             <span>{{ join_request.ride.start_dt|date:"d/m/Y" }}</span>
                             {% if join_request.status == "DECLINED" %}
-                                <span class="badge text-bg-danger">{{ join_request.get_status_display }}</span>
+                            <span class="badge text-bg-danger">{{ join_request.get_status_display }}</span>
                             {% elif join_request.status == "ACCEPTED" %}
-                                <span class="badge text-bg-success">{{ join_request.get_status_display }}</span>
+                            <span class="badge text-bg-success">{{ join_request.get_status_display }}</span>
                             {% elif join_request.status == "PENDING" %}
-                                <span class="badge text-bg-secondary">{{ join_request.get_status_display }}</span>
+                            <span class="badge text-bg-secondary">{{ join_request.get_status_display }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -113,27 +117,101 @@
             </div>
 
             {% if user == join_request.ride.driver %}
-            <div class="card">
+            <div class="card mb-3">
+                <div class="card-header">{% translate "Reservation" %}</div>
                 <div class="card-body">
-                    <span class="mb-3">
-                        {% blocktrans trimmed %}
-                        You have the possibility to accept or decline the request made by this user.
-                        When declining, the user won't be able to send you a request for this ride anymore.
-                        {% endblocktrans %}
-                    </span>
-                    <form action="{% url 'carpool:change_jr_status' join_request.pk %}" method="post">
+                    {% if has_booked_ride %}
+                    <div class="text-muted fst-italic">
+                        {% blocktranslate trimmed %}
+                        The user hasn't made a reservation yet.
+                        {% endblocktranslate %}
+                    </div>
+                    {% else %}
+                    The user has made a reservation for this ride.
+                    <div class="ps-3 border-start mt-3 mb-4">
+                        Date: {{ reservation.created_at }}<br>
+                        Status: {% if reservation.status == "PENDING" %}
+                        <span class="badge text-bg-secondary">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "ACCEPTED" %}
+                        <span class="badge text-bg-success">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "DECLINED" %}
+                        <span class="badge text-bg-danger">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "CANCELED" %}
+                        <span class="badge text-bg-warning">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "COMPLETED" %}
+                        {% endif %}
+                    </div>
+                    <form action="{% url 'carpool:update_reservation' %}{% querystring next=request.path %}" method="post">
                         {% csrf_token %}
-                        <select name="action" id="" class="form-select mt-3">
-                            <option value="decline">{% translate "Decline" %}</option>
-                            <option value="accept">{% translate "Accept" %}</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary mt-2">{% translate "Submit" %}</button>
+                        <div class="row gap-2">
+                            <div class="col-8 pe-0">
+                                <input type="hidden" name="reservation_pk" value="{{ reservation.pk }}">
+                                <select name="action" id="" class="form-select">
+                                    <option value="decline">{% translate "Decline" %}</option>
+                                    <option value="accept">{% translate "Accept" %}</option>
+                                </select>
+                            </div>
+                            <div class="col ps-0">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    {% translate "Submit" %}
+                                </button>
+                            </div>
+                        </div>
                     </form>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
+            {% else %}
+            <div class="card">
+                <div class="card-header">{% translate "Reservation" %}</div>
+                <div class="card-body">
+                    {% if not reservation %}
+                    <form action="{% url 'carpool:subscribe' join_request.ride.pk %}" method="post">
+                        {% csrf_token %}
+                        <p>
+                            {% blocktrans trimmed %}
+                            To make a reservation on this ride, you need to make a request by clicking the button below.
+                            The
+                            driver will then accept or decline your request.
+                            {% endblocktrans %}
+                        </p>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Make a reservation
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">
+                        You have already made a reservation for this ride. The driver will accept or decline your
+                        request.
+                    </span>
+
+                    <div class="ps-3 border-start mt-3 mb-4">
+                        {% translate "Date:" %} {{ reservation.created_at }}<br>
+                        {% translate "Status:" %}{% if reservation.status == "PENDING" %}
+                        <span class="badge text-bg-secondary">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "ACCEPTED" %}
+                        <span class="badge text-bg-success">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "DECLINED" %}
+                        <span class="badge text-bg-danger">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "CANCELED" %}
+                        <span class="badge text-bg-warning">{{ reservation.get_status_display }}</span>
+                        {% elif reservation.status == "COMPLETED" %}
+                        {% endif %}
+                    </div>
+                    <!-- <div class="ms-auto">
+                        <a href=""
+                            class="btn btn-outline-danger w-100 {% if reservation.status == 'DECLINED' or reservation.status == 'CANCELED' %}disabled{% endif %}">
+                            {% translate "Cancel my reservation" %}
+                        </a>
+                    </div> -->
+                </div>
+                {% endif %}
+            </div>
         </div>
+        {% endif %}
     </div>
+</div>
 </div>
 
 <script>
@@ -249,8 +327,8 @@
         if (message.length > 1000) {
             alert("Your message is too long. Please limit it to 1000 character. (Current length: " + message.length + ")");
             return;
-        } 
-        
+        }
+
         if (message === '') return;
 
         chatSocket.send(JSON.stringify({ message }));

@@ -11,71 +11,9 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 from django.utils import timezone
 
-from chat.models import ChatMessage, ChatRequest
+from chat.models import ChatMessage
 
 logger = get_task_logger(__name__)
-
-
-@shared_task
-def send_email_confirmed_ride(join_request_pk):
-    """
-    Send an email to the rider when their ride is confirmed by the driver.
-    """
-    join_request = ChatRequest.objects.get(pk=join_request_pk)
-
-    # User Notification preferences
-    if not join_request.user.notification_preferences.ride_status_update_notification:
-        logger.info(
-            f"User {join_request.user.email} has disabled ride confirmed notifications."
-        )
-        return
-
-    context = {
-        "username": join_request.user.username,
-        "ride": join_request.ride,
-    }
-
-    message = render_to_string("chat/emails/confirmed_ride.txt", context)
-
-    email = EmailMessage(
-        subject="[INSAROULE]" + _("Your ride has been confirmed!"),
-        body=message,
-        to=[join_request.user.email],
-    )
-
-    email.send(fail_silently=False)
-    logger.info(f"Sent ride confirmation email to {join_request.user.email}.")
-
-
-@shared_task
-def send_email_declined_ride(join_request_pk):
-    """
-    Send an email to the rider when their ride is declined by the driver.
-    """
-    join_request = ChatRequest.objects.get(pk=join_request_pk)
-
-    # User Notification preferences
-    if not join_request.user.notification_preferences.ride_status_update_notification:
-        logger.info(
-            f"User {join_request.user.email} has disabled ride declined notifications."
-        )
-        return
-
-    context = {
-        "username": join_request.user.username,
-        "ride": join_request.ride,
-    }
-
-    message = render_to_string("chat/emails/declined_ride.txt", context)
-
-    email = EmailMessage(
-        subject="[INSAROULE]" + _("Your ride has been declined!"),
-        body=message,
-        to=[join_request.user.email],
-    )
-
-    email.send(fail_silently=False)
-    logger.info(f"Sent ride decline email to {join_request.user.email}.")
 
 
 @shared_task

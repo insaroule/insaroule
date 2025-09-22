@@ -3,11 +3,17 @@ from django.contrib import admin
 from carpool.models import Location, Step, Vehicle
 from carpool.models.ride import Ride
 from carpool.models.statistics import Statistics, MonthlyStatistics
+from carpool.models.reservation import Reservation
 
 admin.site.register(Location)
 admin.site.register(Step)
 
 admin.site.register(Statistics)
+
+
+@admin.register(Reservation)
+class ReservationAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Vehicle)

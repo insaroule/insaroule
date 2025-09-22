@@ -1,12 +1,17 @@
 import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.functions import Length
+from django.core.mail import EmailMessage
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
+from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
+from carpool.models.reservation import Reservation
 from carpool.models.ride import Ride
 from carpool.models.statistics import MonthlyStatistics, Statistics
 
@@ -172,3 +177,65 @@ def compute_daily_statistics():
         total_co2 / 1000 if total_co2 else 0
     )  # Convert into kg
     current_month_stats.save()
+
+
+@shared_task
+def send_email_confirmed_ride(reservation_pk):
+    """
+    Send an email to the rider when their ride is confirmed by the driver.
+    """
+    reservation = Reservation.objects.get(pk=reservation_pk)
+
+    # User Notification preferences
+    if not reservation.user.notification_preferences.ride_status_update_notification:
+        logger.info(
+            f"User {reservation.user.email} has disabled ride confirmed notifications."
+        )
+        return
+
+    context = {
+        "username": reservation.user.username,
+        "ride": reservation.ride,
+    }
+
+    message = render_to_string("chat/emails/confirmed_ride.txt", context)
+
+    email = EmailMessage(
+        subject="[INSAROULE] " + _("Your ride has been confirmed!"),
+        body=message,
+        to=[reservation.user.email],
+    )
+
+    email.send(fail_silently=False)
+    logger.info(f"Sent ride confirmation email to {reservation.user.email}.")
+
+
+@shared_task
+def send_email_declined_ride(reservation_pk):
+    """
+    Send an email to the rider when their ride is declined by the driver.
+    """
+    reservation = Reservation.objects.get(pk=reservation_pk)
+
+    # User Notification preferences
+    if not reservation.user.notification_preferences.ride_status_update_notification:
+        logger.info(
+            f"User {reservation.user.email} has disabled ride declined notifications."
+        )
+        return
+
+    context = {
+        "username": reservation.user.username,
+        "ride": reservation.ride,
+    }
+
+    message = render_to_string("chat/emails/declined_ride.txt", context)
+
+    email = EmailMessage(
+        subject="[INSAROULE] " + _("Your ride has been declined!"),
+        body=message,
+        to=[reservation.user.email],
+    )
+
+    email.send(fail_silently=False)
+    logger.info(f"Sent ride decline email to {reservation.user.email}.")

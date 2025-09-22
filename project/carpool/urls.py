@@ -1,7 +1,7 @@
 from django.urls import path
 
 from carpool.views import (
-    change_jrequest_status,
+    update_reservation,
     list_my_rides,
     ride_map,
     rides_create,
@@ -14,6 +14,7 @@ from carpool.views import (
 from carpool.views import api as api_views
 from carpool.views import backoffice as bo_views
 from carpool.views import vehicle as vehicle_views
+from chat.views import request_chat
 
 app_name = "carpool"
 
@@ -25,12 +26,13 @@ urlpatterns = [
     path("<uuid:pk>/edit/", rides_edit, name="edit"),
     path("<uuid:pk>/delete/", rides_delete, name="delete"),
     path("map/", ride_map, name="map"),
-    path("<uuid:pk>/subscribe/", rides_subscribe, name="subscribe"),
-    path("jr/<uuid:jr_pk>/status/", change_jrequest_status, name="change_jr_status"),
+    path("<uuid:ride_pk>/chat/", request_chat, name="chat"),
+    path("<uuid:ride_pk>/subscribe/", rides_subscribe, name="subscribe"),
 ]
 
 # API endpoints
 urlpatterns += [
+    path("api/reservations/update/", update_reservation, name="update_reservation"),
     path("api/vehicles/new/", vehicle_views.create, name="create_vehicle"),
     path("api/vehicles/<int:pk>/update/", vehicle_views.update, name="update_vehicle"),
     path("api/completion/", api_views.autocompletion, name="completion"),

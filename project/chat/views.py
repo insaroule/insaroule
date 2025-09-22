@@ -1,13 +1,37 @@
+import logging
+
 from accounts.models import User
-from django.db.models import Q
 from carpool.models.ride import Ride
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
 from chat.models import ChatMessage, ChatReport, ChatRequest, ModAction
+
+
+@login_required
+def request_chat(request, ride_pk):
+    """Create a chat request for a given ride."""
+    ride = get_object_or_404(Ride, pk=ride_pk)
+    if request.method == "POST":
+        if ChatRequest.objects.filter(user=request.user, ride=ride).exists():
+            logging.warning(
+                f"User {request.user} has made a chat request about ride {ride.pk}"
+            )
+            messages.error(
+                request, _("You have already requested to chat about this ride.")
+            )
+            return redirect("carpool:detail", pk=ride.pk)
+
+        chat_request = ride.join_requests.create(user=request.user)
+
+        return redirect("chat:room", jr_pk=chat_request.pk)
+    return redirect("carpool:detail", pk=ride.pk)
 
 
 @login_required
@@ -112,14 +136,16 @@ def get_sidebar_context(request):
     )
 
     if not request.GET.get("o_declined"):
-        outgoing_requests = outgoing_requests.exclude(
-            status=ChatRequest.Status.DECLINED
-        )
+        # outgoing_requests = outgoing_requests.exclude(
+        #     status=ChatRequest.Status.DECLINED
+        # )
+        pass
 
     if not request.GET.get("i_declined"):
-        incoming_requests = incoming_requests.exclude(
-            status=ChatRequest.Status.DECLINED
-        )
+        # incoming_requests = incoming_requests.exclude(
+        #     status=ChatRequest.Status.DECLINED
+        # )
+        pass
 
     # Order by most recent
     outgoing_requests = outgoing_requests.order_by("ride__start_dt")
@@ -160,9 +186,13 @@ def room(request, jr_pk):
         with_user = join_request.user
 
     shared_ride_count = Ride.objects.count_shared_ride(request.user, with_user)
+    reservation = join_request.ride.reservations.filter(
+        user=join_request.user, status__in=["PENDING", "ACCEPTED", "DECLINED"]
+    ).first()
 
     context = {
         "with_user": with_user,
+        "reservation": reservation,
         "join_request": join_request,
         "shared_ride_count": shared_ride_count,
     }
