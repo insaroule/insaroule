@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-09 23:07+0200\n"
+"POT-Creation-Date: 2025-09-22 16:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,12 +45,12 @@ msgid "Your favorite carpooling app"
 msgstr "Votre application préférée de covoiturage"
 
 #: templates/includes/footer.html:3
-msgid "Privacy Policy"
-msgstr "Politique de confidentialité"
-
-#: templates/includes/footer.html:4
 msgid "Terms of Service"
 msgstr "Conditions d'utilisation"
+
+#: templates/includes/footer.html:4
+msgid "Legal Notice"
+msgstr "Mentions légales"
 
 #: templates/includes/navbar.html:14
 msgid "Rides"

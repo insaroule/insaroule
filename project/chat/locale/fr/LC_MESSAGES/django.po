@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-12 14:13+0200\n"
+"POT-Creation-Date: 2025-09-22 16:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,29 +18,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: chat/models.py:12
-msgid "Pending"
-msgstr "En attente"
-
-#: chat/models.py:13
-msgid "Accepted"
-msgstr "Accepté"
-
-#: chat/models.py:14
-msgid "Declined"
-msgstr "Refusé"
-
 #: chat/models.py:17
 msgid "UUID"
-msgstr ""
-
-#: chat/models.py:24
-msgid "status"
-msgstr "statut"
-
-#: chat/models.py:27
-msgid "Status of the join request"
-msgstr "Statut de la demande"
+msgstr "UUID"
 
 #: chat/models.py:33
 msgid "ride"
@@ -145,15 +125,7 @@ msgstr "action"
 msgid "The type of moderation action performed"
 msgstr "Type d'action de modération effectuée"
 
-#: chat/tasks.py:41
-msgid "Your ride has been confirmed!"
-msgstr "Votre trajet a été confirmé !"
-
-#: chat/tasks.py:72
-msgid "Your ride has been declined!"
-msgstr "Votre trajet a été refusé !"
-
-#: chat/tasks.py:146
+#: chat/tasks.py:84
 msgid "You have unread messages"
 msgstr "Vous avez des messages non lus"
 
@@ -290,43 +262,66 @@ msgstr "Rechercher par contenu de message"
 msgid "Search"
 msgstr "Rechercher"
 
-#: chat/templates/chat/room.html:29
+#: chat/templates/chat/room.html:30
 msgid "Report the conversation"
 msgstr "Signaler la conversation"
 
-#: chat/templates/chat/room.html:38
+#: chat/templates/chat/room.html:40
 msgid "We can moderate messages if necessary."
 msgstr "Nous pouvons modérer les messages si nécessaire."
 
-#: chat/templates/chat/room.html:69
+#: chat/templates/chat/room.html:72
 msgid "You have never ride with this user."
 msgstr "Vous n'avez jamais fait de trajet avec cet utilisateur."
 
-#: chat/templates/chat/room.html:71
+#: chat/templates/chat/room.html:74
 #, python-format
 msgid "You have already shared %(counter)s ride with this user."
 msgid_plural "You have already shared %(counter)s rides with this user."
 msgstr[0] "Vous avez déjà fait %(counter)s trajet avec cet utilisateur."
 msgstr[1] "Vous avez déjà fait %(counter)s trajets avec cet utilisateur."
 
-#: chat/templates/chat/room.html:119
-msgid ""
-"You have the possibility to accept or decline the request made by this user. "
-"When declining, the user won't be able to send you a request for this ride "
-"anymore."
-msgstr ""
-"Vous avez la possibilité d'accepter ou de refuser la demande faite par cet "
-"utilisateur. En refusant, l'utilisateur ne pourra plus vous envoyer de "
-"demande pour ce trajet."
+#: chat/templates/chat/room.html:121 chat/templates/chat/room.html:166
+msgid "Reservation"
+msgstr "Réservation"
 
-#: chat/templates/chat/room.html:127
+#: chat/templates/chat/room.html:125
+msgid "The user hasn't made a reservation yet."
+msgstr "L'utilisateur n'a pas encore fait de réservation."
+
+#: chat/templates/chat/room.html:150
 msgid "Decline"
 msgstr "Refuser"
 
-#: chat/templates/chat/room.html:128
+#: chat/templates/chat/room.html:151
 msgid "Accept"
 msgstr "Accepter"
 
-#: chat/templates/chat/room.html:130
+#: chat/templates/chat/room.html:156
 msgid "Submit"
 msgstr "Envoyer"
+
+#: chat/templates/chat/room.html:172
+msgid ""
+"To make a reservation on this ride, you need to make a request by clicking "
+"the button below. The driver will then accept or decline your request."
+msgstr ""
+"Pour faire une réservation sur ce trajet, vous devez faire une demande en "
+"cliquant sur le bouton ci-dessous. Le conducteur acceptera ou refusera alors "
+"votre demande."
+
+#: chat/templates/chat/room.html:190
+msgid "Date:"
+msgstr "Date :"
+
+#: chat/templates/chat/room.html:191
+msgid "Status:"
+msgstr "Statut :"
+
+#: chat/templates/chat/room.html:205
+msgid "Cancel my reservation"
+msgstr "Annuler ma réservation"
+
+#: chat/views.py:27
+msgid "You have already requested to chat about this ride."
+msgstr "Vous avez déjà demandé à discuter à propos de ce trajet."
