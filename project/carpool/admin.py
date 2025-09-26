@@ -13,7 +13,9 @@ admin.site.register(Statistics)
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("pk", "user", "created_at", "status")
+    list_filter = ("status", "created_at")
+    search_fields = ("user__username", "user__email")
 
 
 @admin.register(Vehicle)
