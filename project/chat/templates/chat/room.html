@@ -141,6 +141,7 @@
                         {% elif reservation.status == "COMPLETED" %}
                         {% endif %}
                     </div>
+                    {% if reservation.status != "CANCELED" %}
                     <form action="{% url 'carpool:update_reservation' %}{% querystring next=request.path %}" method="post">
                         {% csrf_token %}
                         <div class="row gap-2">
@@ -158,6 +159,7 @@
                             </div>
                         </div>
                     </form>
+                    {% endif %}
                     {% endif %}
                 </div>
             </div>

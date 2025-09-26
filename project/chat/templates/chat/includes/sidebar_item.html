@@ -18,18 +18,23 @@
         </div>
         <div class="d-flex flex-column align-items-end">
             <span>{{ jr.ride.start_dt|date:"d/m/Y" }}</span>
+            {{ jr.last_reservation_status }}
             <span>
                 <span>{{ contact.username|truncatechars:16 }}</span>
-                {% if reservation.status == "PENDING" %}
+                {% if jr.last_reservation_status == "PENDING" %}
                 <span>
                     <i class="bi bi-envelope-fill"></i>
                 </span>
-                {% elif reservation.status == "ACCEPTED" %}
+                {% elif jr.last_reservation_status == "ACCEPTED" %}
                 <span class="text-success">
                     <i class="bi bi-envelope-check-fill"></i>
                 </span>
-                {% elif reservation.status == "DECLINED" %}
+                {% elif jr.last_reservation_status == "DECLINED" %}
                 <span class="text-danger">
+                    <i class="bi bi-envelope-x-fill"></i>
+                </span>
+                {% elif jr.last_reservation_status == "CANCELED" %}
+                <span class="text-warning">
                     <i class="bi bi-envelope-x-fill"></i>
                 </span>
                 {% endif %}

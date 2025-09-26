@@ -119,7 +119,10 @@ def update_reservation(request):
     next_url = request.GET.get("next", reverse("chat:index"))
 
     if request.user != reservation.ride.driver:
-        return HttpResponse("You are not the driver of this ride", status=403)
+        return HttpResponse("You are not the driver of this ride.", status=403)
+
+    if reservation.status == Reservation.Status.CANCELED:
+        return HttpResponse("This reservation is already canceled.", status=400)
 
     action = request.POST.get("action")
 

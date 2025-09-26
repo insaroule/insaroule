@@ -11,6 +11,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 
+from carpool.models.reservation import Reservation
+from django.db.models import OuterRef, Subquery
+
 from chat.models import ChatMessage, ChatReport, ChatRequest, ModAction
 
 
@@ -130,26 +133,41 @@ def get_sidebar_context(request):
     Get the context for the sidebar, including outgoing and incoming chat requests.
     Used to avoid code duplication in multiple views.
     """
-    outgoing_requests = ChatRequest.objects.filter(user=request.user)
-    incoming_requests = ChatRequest.objects.filter(
-        ride__in=request.user.rides_as_driver.all(),
+
+    # Subquery to fetch the last reservation status
+    last_reservation = Reservation.objects.filter(
+        ride=OuterRef("ride"),
+        user=OuterRef("user"),
+    ).order_by("-created_at")
+
+    outgoing_requests = (
+        ChatRequest.objects.filter(user=request.user)
+        .annotate(
+            last_reservation_status=Subquery(last_reservation.values("status")[:1])
+        )
+        .order_by("ride__start_dt")
     )
 
+    # Print last_reservation_status for debugging
+
+    incoming_requests = (
+        ChatRequest.objects.filter(ride__in=request.user.rides_as_driver.all())
+        .annotate(
+            last_reservation_status=Subquery(last_reservation.values("status")[:1])
+        )
+        .order_by("ride__start_dt")
+    )
+
+    # Filtering for declined (if you re-enable later)
     if not request.GET.get("o_declined"):
-        # outgoing_requests = outgoing_requests.exclude(
-        #     status=ChatRequest.Status.DECLINED
-        # )
-        pass
+        outgoing_requests = outgoing_requests.exclude(
+            last_reservation_status="DECLINED"
+        )
 
     if not request.GET.get("i_declined"):
-        # incoming_requests = incoming_requests.exclude(
-        #     status=ChatRequest.Status.DECLINED
-        # )
-        pass
-
-    # Order by most recent
-    outgoing_requests = outgoing_requests.order_by("ride__start_dt")
-    incoming_requests = incoming_requests.order_by("ride__start_dt")
+        incoming_requests = incoming_requests.exclude(
+            last_reservation_status="DECLINED"
+        )
 
     # Pagination
     o_paginator = Paginator(outgoing_requests, 4)
@@ -186,7 +204,12 @@ def room(request, jr_pk):
         with_user = join_request.user
 
     shared_ride_count = Ride.objects.count_shared_ride(request.user, with_user)
-    reservation = join_request.ride.reservations.filter(user=join_request.user).first()
+
+    reservation = (
+        join_request.ride.reservations.filter(user=join_request.user)
+        .order_by("-created_at")
+        .first()
+    )
 
     context = {
         "with_user": with_user,
