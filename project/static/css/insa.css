@@ -1,0 +1,14 @@
+
+@font-face {
+    font-family: "League Spartan";
+    src: url("../fonts/LeagueSpartan-Bold.ttf") format("truetype");
+    font-weight: 700;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "League Spartan", sans-serif;
+    font-weight: 700;
+    /* Capitalize */
+    text-transform: uppercase;
+}
+

@@ -33,6 +33,10 @@ def user_profile(request):
         preferences.ride_status_update_notification = (
             request.POST.get("ride_status_update_notification") == "on"
         )
+        preferences.ride_sharing_suggestion_notification = (
+            request.POST.get("ride_sharing_suggestion_notification") == "on"
+        )
+
         preferences.save()
         messages.success(request, _("Your preferences have been updated."))
 

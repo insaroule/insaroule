@@ -42,7 +42,10 @@
 {% block extrascript %}
 <!-- Script to enable or disable -->
 <script>
-	const notBefore = JSON.parse(document.getElementById('not-before').textContent);
+	const notBeforeEl = document.getElementById('not-before');
+	if (notBeforeEl) {
+		const notBefore = JSON.parse(notBeforeEl.textContent);
+	}
 
 	if (notBefore) {
 		const notBeforeDate = new Date(notBefore);

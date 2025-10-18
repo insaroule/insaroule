@@ -1,6 +1,7 @@
 {% load i18n %}{% include "emails/signature.txt" %}
 ------------------------------------------------------------------
-{% blocktranslate %}You are receiving this email because it contains essential 
+{% blocktranslate trimmed %}
+You are receiving this email because it contains essential 
 information regarding your account or our legal obligations.To stop
 receiving this type of mandatory communication, you must close your
 account. 

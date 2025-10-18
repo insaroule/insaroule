@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from django.contrib.auth.models import Group, Permission
 from accounts.models import User
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -9,7 +10,8 @@ from django.db.models import Case, Count, F, When
 from django.db.models.fields import UUIDField
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
-from django.utils import timezone
+from django.utils import timezone, translation
+
 
 from chat.models import ChatMessage, ChatRequest
 
@@ -17,65 +19,43 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def send_email_confirmed_ride(join_request_pk):
+def send_email_report_to_mods(chat_request_pk, site_base_url):
     """
-    Send an email to the rider when their ride is confirmed by the driver.
+    Task to send an email report to moderators about a specific chat.
     """
-    join_request = ChatRequest.objects.get(pk=join_request_pk)
+    # A moderator is a User that is in a Group (mods) or has can_moderate permission
+    g = Group.objects.get(name="mods")
+    p = Permission.objects.get(codename="can_moderate_messages")
+    mods = User.objects.filter(groups=g) | User.objects.filter(user_permissions=p)
+    mod_emails = mods.values_list("email", flat=True).distinct()
 
-    # User Notification preferences
-    if not join_request.user.notification_preferences.ride_status_update_notification:
-        logger.info(
-            f"User {join_request.user.email} has disabled ride confirmed notifications."
-        )
-        return
+    # List all the messages in the chat
+    chat_messages = ChatMessage.objects.filter(
+        chat_request__pk=chat_request_pk
+    ).order_by("timestamp")
 
+    # Prepare the email content
     context = {
-        "username": join_request.user.username,
-        "ride": join_request.ride,
+        "chat_messages": chat_messages,
+        "chat_request": ChatRequest.objects.get(pk=chat_request_pk),
+        "site_base_url": site_base_url,
     }
 
-    message = render_to_string("chat/emails/confirmed_ride.txt", context)
-
+    # message render as html
+    message = render_to_string("chat/emails/report_chat.html", context)
     email = EmailMessage(
-        subject="[INSAROULE]" + _("Your ride has been confirmed!"),
+        subject="[INSAROULE] "
+        + _("Chat report")
+        + f" - Chat Request {chat_request_pk}",
         body=message,
-        to=[join_request.user.email],
+        to=mod_emails,
     )
+    email.content_subtype = "html"  # Main content is now text/html
 
     email.send(fail_silently=False)
-    logger.info(f"Sent ride confirmation email to {join_request.user.email}.")
-
-
-@shared_task
-def send_email_declined_ride(join_request_pk):
-    """
-    Send an email to the rider when their ride is declined by the driver.
-    """
-    join_request = ChatRequest.objects.get(pk=join_request_pk)
-
-    # User Notification preferences
-    if not join_request.user.notification_preferences.ride_status_update_notification:
-        logger.info(
-            f"User {join_request.user.email} has disabled ride declined notifications."
-        )
-        return
-
-    context = {
-        "username": join_request.user.username,
-        "ride": join_request.ride,
-    }
-
-    message = render_to_string("chat/emails/declined_ride.txt", context)
-
-    email = EmailMessage(
-        subject="[INSAROULE]" + _("Your ride has been declined!"),
-        body=message,
-        to=[join_request.user.email],
+    logger.info(
+        f"Sent chat report email to moderators about chat request {chat_request_pk}."
     )
-
-    email.send(fail_silently=False)
-    logger.info(f"Sent ride decline email to {join_request.user.email}.")
 
 
 @shared_task
@@ -141,9 +121,12 @@ def send_email_unread_messages():
             "chats": chats,
         }
 
-        message = render_to_string("chat/emails/unread_messages.txt", context)
+        with translation.override(user.preferred_language):
+            subject = "[INSAROULE]" + _("You have unread messages")
+            message = render_to_string("chat/emails/unread_messages.txt", context)
+
         email = EmailMessage(
-            subject="[INSAROULE]" + _("You have unread messages"),
+            subject=subject,
             body=message,
             to=[user.email],
         )

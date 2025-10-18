@@ -1,13 +1,41 @@
+import logging
+
 from accounts.models import User
-from django.db.models import Q
+from carpool.models.reservation import Reservation
 from carpool.models.ride import Ride
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
+from django.db.models import OuterRef, Q, Subquery
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils import timezone
 
 from chat.models import ChatMessage, ChatReport, ChatRequest, ModAction
+from chat.tasks import send_email_report_to_mods
+
+
+@login_required
+def request_chat(request, ride_pk):
+    """Create a chat request for a given ride."""
+    ride = get_object_or_404(Ride, pk=ride_pk)
+    if request.method == "POST":
+        if ChatRequest.objects.filter(user=request.user, ride=ride).exists():
+            logging.warning(
+                f"User {request.user} has made a chat request about ride {ride.pk}"
+            )
+            messages.error(
+                request, _("You have already requested to chat about this ride.")
+            )
+            return redirect("carpool:detail", pk=ride.pk)
+
+        chat_request = ride.join_requests.create(user=request.user)
+
+        return redirect("chat:room", jr_pk=chat_request.pk)
+    return redirect("carpool:detail", pk=ride.pk)
 
 
 @login_required
@@ -21,12 +49,25 @@ def report(request, jr_pk):
                 "You are not allowed to report this chat request", status=403
             )
 
+        # Check if the user has already reported this chat request
+        if ChatReport.objects.filter(
+            chat_request=join_request, reported_by=request.user
+        ).exists():
+            messages.error(request, _("You have already reported this chat request."))
+            return redirect("chat:room", jr_pk=jr_pk)
+
         # Handle the report submission
         ChatReport.objects.create(
             chat_request=join_request,
             reported_by=request.user,
             reason=request.POST.get("reason", ""),
         )
+
+        # Notify moderators via email (asynchronous task)
+        site_base_url = request.scheme + "://" + get_current_site(request).domain
+        send_email_report_to_mods.delay(join_request.pk, site_base_url)
+
+    messages.info(request, _("The chat request has been reported."))
     return redirect("chat:room", jr_pk=jr_pk)
 
 
@@ -75,10 +116,20 @@ def mod_room(request, jr_pk):
 
 @permission_required("chat.can_moderate_messages", raise_exception=True)
 def mod_center(request):
+    query_ride = request.GET.get("ride", "")
     query_username = request.GET.get("search_by_username", "")
     query_content = request.GET.get("search_by_content", "")
+    past_rides = request.GET.get("past", "")
 
-    reports = ChatRequest.objects.all().order_by("-created_at")
+    reports = ChatRequest.objects.all()
+
+    if not past_rides == "1":
+        reports = reports.filter(
+            ride__start_dt__gte=timezone.now() - timezone.timedelta(days=1)
+        )
+
+    reports = reports.order_by("-created_at")
+
     if query_username:
         print(f"Searching by username: {query_username}")
         reports = reports.filter(
@@ -89,6 +140,10 @@ def mod_center(request):
         print(f"Searching by content: {query_content}")
         reports = reports.filter(Q(messages__content__icontains=query_content))
 
+    if query_ride:
+        print(f"Filtering by ride: {query_ride}")
+        reports = reports.filter(ride__pk=query_ride)
+
     paginator = Paginator(reports, 10)  # Show 10 reports per page
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -97,6 +152,7 @@ def mod_center(request):
         "page_obj": page_obj,
         "search_by_username": query_username,
         "search_by_content": query_content,
+        "ride": query_ride,
     }
     return render(request, "chat/moderation/index.html", context)
 
@@ -106,24 +162,52 @@ def get_sidebar_context(request):
     Get the context for the sidebar, including outgoing and incoming chat requests.
     Used to avoid code duplication in multiple views.
     """
-    outgoing_requests = ChatRequest.objects.filter(user=request.user)
-    incoming_requests = ChatRequest.objects.filter(
-        ride__in=request.user.rides_as_driver.all(),
+
+    # Subquery to fetch the last reservation status
+    last_reservation = Reservation.objects.filter(
+        ride=OuterRef("ride"),
+        user=OuterRef("user"),
+    ).order_by("-created_at")
+
+    outgoing_requests = (
+        ChatRequest.objects.filter(user=request.user)
+        .annotate(
+            last_reservation_status=Subquery(last_reservation.values("status")[:1])
+        )
+        .order_by("ride__start_dt")
     )
 
-    if not request.GET.get("o_declined"):
-        outgoing_requests = outgoing_requests.exclude(
-            status=ChatRequest.Status.DECLINED
+    # Print last_reservation_status for debugging
+
+    incoming_requests = (
+        ChatRequest.objects.filter(ride__in=request.user.rides_as_driver.all())
+        .annotate(
+            last_reservation_status=Subquery(last_reservation.values("status")[:1])
+        )
+        .order_by("ride__start_dt")
+    )
+
+    print("Outgoing Requests with last_reservation_status:")
+    for jr in outgoing_requests:
+        print(
+            f"JoinRequest ID: {jr.pk}, Last Reservation Status: {jr.last_reservation_status}"
+        )
+    print("Incoming Requests with last_reservation_status:")
+    for jr in incoming_requests:
+        print(
+            f"JoinRequest ID: {jr.pk}, Last Reservation Status: {jr.last_reservation_status}"
         )
 
-    if not request.GET.get("i_declined"):
-        incoming_requests = incoming_requests.exclude(
-            status=ChatRequest.Status.DECLINED
-        )
+    # Filtering for declined (if you re-enable later)
+    # if not request.GET.get("o_declined"):
+    #     outgoing_requests = outgoing_requests.exclude(
+    #         last_reservation_status="DECLINED"
+    #     )
 
-    # Order by most recent
-    outgoing_requests = outgoing_requests.order_by("ride__start_dt")
-    incoming_requests = incoming_requests.order_by("ride__start_dt")
+    # if not request.GET.get("i_declined"):
+    #     incoming_requests = incoming_requests.exclude(
+    #         last_reservation_status="DECLINED"
+    #     )
 
     # Pagination
     o_paginator = Paginator(outgoing_requests, 4)
@@ -161,10 +245,18 @@ def room(request, jr_pk):
 
     shared_ride_count = Ride.objects.count_shared_ride(request.user, with_user)
 
+    reservation = (
+        join_request.ride.reservations.filter(user=join_request.user)
+        .order_by("-created_at")
+        .first()
+    )
+
     context = {
         "with_user": with_user,
+        "reservation": reservation,
         "join_request": join_request,
         "shared_ride_count": shared_ride_count,
+        "has_booked_ride": reservation is not None,
     }
     # Inject sidebar context
     context.update(get_sidebar_context(request))

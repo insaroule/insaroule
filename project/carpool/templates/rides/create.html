@@ -30,10 +30,13 @@
 <div class="container-fluid mt-3">
     <div class="row">
         <div class="col-lg h-100">
-            <div id="map" style="height: 90vh"></div>
+            <div id="map" style="height: 86vh"></div>
         </div>
         <div class="col-lg-4">
             <h2>{% translate "Publish a new ride" %}</h2>
+            {{ form.errors }}
+
+
             <!-- Departure address autocomplete -->
             <div class="mb-3">
                 <label for="departure">
@@ -121,7 +124,9 @@
                     <label for="vehicle" class="d-flex justify-content-between vertical-align mb-1">
                         <span class="mt-auto">{% translate "Vehicle" %}</span>
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal"
-                            data-bs-target="#vehicleModal" id="createButton">{% translate "Add a new vehicle" %}</button>
+                            data-bs-target="#vehicleModal" id="createButton">
+                            {% translate "Add a new vehicle"%}
+                        </button>
                     </label>
                     {% if user.vehicles.all %}
                     <div class="input-group">
@@ -130,21 +135,39 @@
                             <option value="{{ vehicle.pk }}" data-name="{{ vehicle.name }}"
                                 data-description="{{ vehicle.description }}" data-seats="{{ vehicle.seats }}"
                                 data-co2="{{ vehicle.geqCO2_per_km}}">
-                                {{ vehicle.name }} - {{ vehicle.seats }} {% translate "seats" %}
+                                {{ vehicle.name }} -
+                                {% blocktranslate trimmed count vehicle.seats as seat_count %}
+                                {{ seat_count }} seat
+                                {% plural %}
+                                {{ seat_count }} seats
+                                {% endblocktranslate %}
                             </option>
                             {% endfor %}
                         </select>
                         <button class="btn btn-secondary" type="button" id="editVehicleBtn">
-                            Edit
+                            {% translate "Edit" %}
                         </button>
                     </div>
                     {% else %}
-                    <div class="card border border-primary" style="border-style: dashed !important;">
+                    <div class="card border border-primary" style="border-style: dashed !important;" id="NoVehicleCard">
                         <div class="card-body">
-                            {% translate "You don't have any vehicle registered to your account. Please add one to publish a ride." %}
+                            {% blocktranslate trimmed %}
+                            You don't have any vehicle registered to your account. Please add one to
+                            publish a ride.
+                            {% endblocktranslate %}
                         </div>
                     </div>
 
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.comment.id_for_label }}">
+                        {% translate "Comment (optional)" %}
+                    </label>
+                    {{ form.comment }}
+                    {% if form.comment.errors %}
+                    <span class="text-danger">{{ form.comment.errors }}</span>
                     {% endif %}
                 </div>
 
@@ -175,15 +198,17 @@
                         <input type="text" name="name" id="vehicle_name" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label for="vehicle_description">{% translate "Visual Description" %}<sup class="text-danger">*</sup></label>
+                        <label for="vehicle_description">{% translate "Visual Description" %}<sup
+                                class="text-danger">*</sup></label>
                         <input type="text" name="description" id="vehicle_description" class="form-control" required>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label for="vehicle_seats">{% translate "Maximum number of seats" %}<sup class="text-danger">*</sup></label>
+                            <label for="vehicle_seats">{% translate "Maximum number of seats" %}<sup
+                                    class="text-danger">*</sup></label>
                             <input type="text" name="seats" id="vehicle_seats" class="form-control">
                         </div>
-                        <div class="col">
+                        <div class="col mt-auto">
                             <label for="vehicle_co2">{% translate "CO<sub>2</sub> emission (g/km)" %}</label>
                             <input type="text" name="geqCO2_per_km" id="vehicle_co2" class="form-control">
                         </div>
@@ -197,7 +222,9 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Close" %}</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {% translate "Close" %}
+                    </button>
                     <button type="submit" class="btn btn-primary">{% translate "Save changes" %}</button>
                 </div>
         </form>
@@ -549,19 +576,19 @@
     function createToast(alert, content) {
         const toastContainer = document.getElementById("toastContainer");
         const toastEl = document.createElement("div");
-        
+
         if (alert == "debug") {
-                toastEl.className = "toast align-items-center bg-secondary text-white";
+            toastEl.className = "toast align-items-center bg-secondary text-white";
         } else if (alert == "info") {
-                toastEl.className = "toast align-items-center bg-info text-white";
+            toastEl.className = "toast align-items-center bg-info text-white";
         } else if (alert == "success") {
-                toastEl.className = "toast align-items-center bg-success text-white";
+            toastEl.className = "toast align-items-center bg-success text-white";
         } else if (alert == "warning") {
-                toastEl.className = "toast align-items-center bg-warning";
+            toastEl.className = "toast align-items-center bg-warning";
         } else if (alert == "error") {
-                toastEl.className = "toast align-items-center bg-danger text-white";
+            toastEl.className = "toast align-items-center bg-danger text-white";
         } else {
-                toastEl.className = "toast align-items-center bg-secondary text-white";
+            toastEl.className = "toast align-items-center bg-secondary text-white";
         }
 
         toastEl.setAttribute("role", "alert");
@@ -574,11 +601,10 @@
                 <div class="toast-body">
                     ${content}
                 </div>
-                <button type="button" class="btn-close me-2 m-auto ${
-                    alert == "debug" || alert == "info" || alert == "success" || alert == "error"
-                        ? "btn-close-white"
-                        : ""
-                }" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close me-2 m-auto ${alert == "debug" || alert == "info" || alert == "success" || alert == "error"
+                ? "btn-close-white"
+                : ""
+            }" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         `;
         toastEl.appendChild(toastContent);
@@ -591,6 +617,38 @@
     // =================================================================
     // Vehicle modal form handling
     // =================================================================
+    function vehicleEditBtnEventListener() {
+        let vehicleSelect = document.getElementById("vehicle");
+        let vehicleModal = bootstrap.Modal.getInstance(
+            document.getElementById("vehicleModal"),
+        );
+        let vehicleModalTitle = document.getElementById("vehicleModalTitle");
+        const vehicleIdInput = document.getElementById("vehicle_id");
+        const vehicleNameInput = document.getElementById("vehicle_name");
+        const vehicleDescriptionInput = document.getElementById(
+            "vehicle_description",
+        );
+        const vehicleSeatsInput = document.getElementById("vehicle_seats");
+        const vehicleCO2Input = document.getElementById("vehicle_co2");
+        const selectedOption =
+            vehicleSelect.options[vehicleSelect.selectedIndex];
+
+        if (!selectedOption) {
+            alert("{% translate 'Please select a vehicle to edit.' %}");
+            return;
+        }
+
+        vehicleModalTitle.textContent = "{% translate 'Edit vehicle' %}";
+        vehicleIdInput.value = selectedOption.value;
+        vehicleNameInput.value = selectedOption.dataset.name || "";
+        vehicleDescriptionInput.value =
+            selectedOption.dataset.description || "";
+        vehicleSeatsInput.value = selectedOption.dataset.seats || "";
+        vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+
+        vehicleModal.show();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         const vehicleModal = new bootstrap.Modal(
             document.getElementById("vehicleModal"),
@@ -617,31 +675,17 @@
 
         // Open modal in "edit" mode
         if (editVehicleBtn) {
-            editVehicleBtn.addEventListener("click", function () {
-                let vehicleSelect = document.getElementById("vehicle");
-                const selectedOption =
-                    vehicleSelect.options[vehicleSelect.selectedIndex];
-
-                if (!selectedOption) {
-                    alert("{% translate 'Please select a vehicle to edit.' %}");
-                    return;
-                }
-
-                vehicleModalTitle.textContent = "{% translate 'Edit vehicle' %}";
-                vehicleIdInput.value = selectedOption.value;
-                vehicleNameInput.value = selectedOption.dataset.name || "";
-                vehicleDescriptionInput.value =
-                    selectedOption.dataset.description || "";
-                vehicleSeatsInput.value = selectedOption.dataset.seats || "";
-                vehicleCO2Input.value = selectedOption.dataset.co2 || "";
-
-                vehicleModal.show();
-            });
+            editVehicleBtn.addEventListener("click", vehicleEditBtnEventListener);
         }
 
-        // Handle form submission
         vehicleForm.addEventListener("submit", function (event) {
             event.preventDefault();
+
+            // Nettoyer les anciennes erreurs
+            vehicleForm.querySelectorAll(".is-invalid").forEach((el) => {
+                el.classList.remove("is-invalid");
+            });
+            vehicleForm.querySelectorAll(".invalid-feedback").forEach((el) => el.remove());
 
             const formData = new FormData(vehicleForm);
             const url = formData.get("vehicle_id")
@@ -649,7 +693,7 @@
                 : "/api/vehicles/new/";
 
             fetch(url, {
-                method: formData.get("vehicle_id") ? "POST" : "POST",
+                method: "POST",
                 headers: {
                     "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
                 },
@@ -658,89 +702,96 @@
                 .then((response) => {
                     if (!response.ok) {
                         return response.json().then((data) => {
-                            throw new Error(
-                                data.error || "{% translate 'Failed to save vehicle' %}",
-                            );
+                            if (data.errors) {
+                                for (const [field, messages] of Object.entries(data.errors)) {
+                                    const input = vehicleForm.querySelector(`[name="${field}"]`);
+                                    if (input) {
+                                        input.classList.add("is-invalid");
+
+                                        const feedback = document.createElement("div");
+                                        feedback.classList.add("invalid-feedback");
+                                        feedback.textContent = messages.join(" ");
+                                        input.insertAdjacentElement("afterend", feedback);
+                                    }
+                                }
+                            }
+
+                            if (data.error) {
+                                createToast("error", data.error);
+                            }
+
+                            throw new Error("Validation error");
                         });
                     }
                     return response.json();
                 })
                 .then((data) => {
+                    console.debug("Vehicle saved:", data);
+                    createToast("success", "{% translate 'Vehicle saved successfully!' %}");
+                    vehicleModal.hide();
+
+                    // Update the vehicle select dropdown
                     let vehicleSelect = document.getElementById("vehicle");
 
                     if (!vehicleSelect) {
-                        // We assume that the vehicleSelect doesn't exist because
-                        // there was no vehicle registered yet
-                        const vehicleDiv = createButton.parentElement.parentElement.querySelector(".card");
+                        console.debug("Creating vehicle select");
+                        // If the select doesn't exist, create it
+                        // with the edit button next to it (in an input group)
+                        const inputGroup = document.createElement("div");
+                        inputGroup.className = "input-group";
+                        inputGroup.id = "vehicleInputGroup";
 
-                        vehicleDiv.innerHTML = `
-                            <div class="input-group">
-                                <select class="form-select" name="vehicle" id="vehicle"></select>
-                                <button class="btn btn-secondary" type="button" id="editVehicleBtn">
-                                    Edit this vehicle
-                                </button>
-                            </div>
-                        `;
-                        vehicleSelect = document.getElementById("vehicle");
-                        // Re-attach event listener to the new edit button
-                        document.getElementById("editVehicleBtn").addEventListener("click", function () {
-                            const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
 
-                            if (!selectedOption) {
-                                alert("{% translate 'Please select a vehicle to edit.' %}");
-                                return;
-                            }
+                        vehicleSelect = document.createElement("select");
+                        vehicleSelect.id = "vehicle";
+                        vehicleSelect.name = "vehicle";
+                        vehicleSelect.className = "form-select";
 
-                            vehicleModalTitle.textContent = "{% translate 'Edit vehicle' %}";
-                            vehicleIdInput.value = selectedOption.value;
-                            vehicleNameInput.value = selectedOption.dataset.name || "";
-                            vehicleDescriptionInput.value = selectedOption.dataset.description || "";
-                            vehicleSeatsInput.value = selectedOption.dataset.seats || "";
-                            vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+                        const editButton = document.createElement("button");
+                        editButton.className = "btn btn-secondary";
+                        editButton.type = "button";
+                        editButton.id = "editVehicleBtn";
+                        editButton.textContent = "{% translate 'Edit' %}";
+                        editButton.addEventListener("click", vehicleEditBtnEventListener);
 
-                            console.log(selectedOption.dataset.co2)
+                        inputGroup.appendChild(vehicleSelect);
+                        inputGroup.appendChild(editButton);
 
-                            vehicleModal.show();
-                        });
+                        // Replace NoVehicleCard with the select
+                        const noVehicleCard = document.getElementById("NoVehicleCard");
+                        if (noVehicleCard) {
+                            noVehicleCard.replaceWith(inputGroup);
+                        }
 
                     }
-
-                    let option = vehicleSelect.querySelector(
-                        `option[value="${data.vehicle.id}"]`,
-                    );
-
+                    let option = vehicleSelect.querySelector(`option[value="${data.vehicle.id}"]`);
                     if (option) {
+                        console.debug("Updating existing vehicle option");
                         // Update existing option
-                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seats" %}`;
+                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seat" %}${data.vehicle.seats > 1 ? 's' : ''}`;
                         option.dataset.name = data.vehicle.name;
                         option.dataset.description = data.vehicle.description;
                         option.dataset.seats = data.vehicle.seats;
                         option.dataset.co2 = data.vehicle.geqCO2_per_km;
-
-                        createToast("success", "Vehicle updated successfully!");
                     } else {
+                        console.debug("Adding new vehicle option");
                         // Add new option
                         option = document.createElement("option");
                         option.value = data.vehicle.id;
-                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seats" %}`;
+                        option.textContent = `${data.vehicle.name} - ${data.vehicle.seats} {% translate "seat" %}${data.vehicle.seats > 1 ? 's' : ''}`;
                         option.dataset.name = data.vehicle.name;
                         option.dataset.description = data.vehicle.description;
                         option.dataset.seats = data.vehicle.seats;
                         option.dataset.co2 = data.vehicle.geqCO2_per_km;
                         vehicleSelect.appendChild(option);
-
-                        createToast("success", "Vehicle added successfully!");
                     }
-                    
-                    // Select the newly added/edited vehicle
                     vehicleSelect.value = data.vehicle.id;
-
-                    vehicleModal.hide();
                 })
                 .catch((error) => {
-                    alert(error.message);
+                    console.error(error);
                 });
         });
+
     });
 
 </script>

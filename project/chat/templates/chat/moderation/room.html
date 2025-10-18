@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% load static %}
-{% load duration %}
+{% load duration static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
@@ -18,7 +18,8 @@
         <div class="col-lg-6">
             <div class="card" style="min-height: 80vh;">
                 <div class="card-header d-flex justify-content-between">
-                    <h5 class="card-title mb-0">Room: {{ join_request.uuid }}</h5>
+                    <span class="card-title mb-0">Room: {{ join_request.uuid }}</span>
+                    <a href="{{ join_request.ride.get_absolute_url }}">{% translate "See associated ride" %}</a>
                 </div>
 
                 <div class="card-body p-0">
@@ -101,7 +102,6 @@
         } else {
             wrapper.className = 'd-flex justify-content-end';
         }
-        // wrapper.className = `d-flex ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
 
         const card = document.createElement('div');
 
@@ -138,7 +138,7 @@
 
         const messageFooter = document.createElement('div');
         messageFooter.id = `message-footer-${msg.id}`;
-        messageFooter.className = 'd-flex justify-content-between align-items-center';
+        messageFooter.className = 'd-flex justify-content-between align-items-center px-2';
         if (!msg.hidden) {
             messageFooter.innerHTML = `
                 <button type="button" class="btn btn-sm" onclick="chatSocket.send(JSON.stringify({ action: 'hide', message_id: ${msg.id} }));">
@@ -152,6 +152,18 @@
                 </button>
             `;
         }
+        // Add timestamp
+        const timestamp = document.createElement('small');
+        const date = new Date(msg.timestamp);
+        timestamp.textContent = date.toLocaleString('{{ LANGUAGE_CODE }}', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        messageFooter.appendChild(timestamp);
+
         card.appendChild(messageFooter);
     
         

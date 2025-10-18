@@ -1,8 +1,11 @@
-{% load i18n %}
+{% load static i18n %}
 {% get_current_language as LANGUAGE_CODE %}
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'carpool:list' %}">INSA'Roule</a>
+        <a class="navbar-brand" href="{% url 'carpool:list' %}">
+            <img src="{% static 'img/logo/insa-rennes.png' %}" alt="logo INSA Rennes" class="img-fluid me-2" style="height: 30px;">
+            INSA'Roule
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -13,6 +16,8 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}" 
                     {% if request.resolver_match.url_name == 'list' %}aria-current="page"{% endif %} href="{% url 'carpool:list' %}">{% translate "Rides" %}</a>
                 </li>
+
+                {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'map' %}active{% endif %}" 
                     {% if request.resolver_match.url_name == 'map' %}aria-current="page"{% endif %} href="{% url 'carpool:map' %}">{% translate "Map View" %}</a>
@@ -23,10 +28,12 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" 
-                    {% if request.resolver_match.url_name == 'create' %}aria-current="page"{% endif %} href="{% url 'carpool:create' %}">{% translate "Publish a ride" %}</a>
+                    {% if request.resolver_match.url_name == 'create' %}aria-current="page"{% endif %} href="{% url 'carpool:create_step1' %}">{% translate "Publish a ride" %}</a>
                 </li>
+                {% endif %}
             </ul>
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                {% if user.is_authenticated %}
 
                 <li class="nav-item my-auto me-3 mb-2 my-xl-auto">
                     <a class="btn btn-sm btn-outline-primary position-relative" href="{% url 'chat:index' %}">
@@ -36,18 +43,13 @@
                         </span>-->
                     </a>
                 </li>
+                {% endif %}
 
                 <div class="my-auto">
-                    <form action="{% url 'set_language' %}" method="post">
-                    {% csrf_token %}
-                    <input name="next" type="hidden" value="{{ request.path }}">
-                    <select name="language"  class="form-select form-select-sm" onchange="this.form.submit()">
-                        <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
-                        <option value="fr" {% if LANGUAGE_CODE == 'fr' %}selected{% endif %}>Français</option>
-                    </select>
-                    </form>
+                    {% include "includes/langselect.html" %}
                 </div>
-
+                
+                {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -79,6 +81,13 @@
                         </form>
                     </ul>
                 </li>
+                {% else %}
+                <li class="nav-item my-auto py-xl-0 py-3 ms-xl-2 ms-0">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:login' %}">
+                        {% translate "Login" %}
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </div>

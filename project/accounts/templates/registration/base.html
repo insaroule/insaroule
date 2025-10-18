@@ -1,6 +1,8 @@
-{% load static %}
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
+
 <!doctype html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}" class="h-100">
 
 <head>
     <meta charset="utf-8">
@@ -12,11 +14,27 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
+
+    <link rel="stylesheet" href="{% static 'css/insa.css' %}">
     {% block extrahead %}{% endblock %}
 </head>
 
-<body>
-    {% block content %}{% endblock %}
+<body class="d-flex flex-column h-100">
+    <div class="position-fixed top-0 start-0 p-3" style="z-index: 1000;">
+        <a href="https://www.insa-rennes.fr">
+            <img src="{% static 'img/logo/insa-rennes.png' %}" class="img-fluid" alt="INSA Rennes Logo" style="max-height: 40px;">
+        </a>
+    </div>
+
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1030;">
+        {% include "includes/langselect.html" %}
+    </div>
+
+    <main class="flex-shrink-0 pt-4">
+        {% block content %}{% endblock %}
+    </main>
+    {% include "includes/footer.html" %}
+
     <script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"
         integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
         crossorigin="anonymous"></script>

@@ -12,6 +12,136 @@ from carpool.models import Vehicle
 MAXIMUM_SEATS_IN_VEHICLE = 8
 
 
+class CreateRideStep1Form(forms.Form):
+    # Departure information
+    d_fulltext = forms.CharField(required=True, widget=forms.HiddenInput())
+    d_street = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )  # Not necessary a street (could be a city)
+    d_zipcode = forms.CharField(required=True, widget=forms.HiddenInput())
+    d_city = forms.CharField(required=True, widget=forms.HiddenInput())
+    d_latitude = forms.FloatField(required=True, widget=forms.HiddenInput())
+    d_longitude = forms.FloatField(required=True, widget=forms.HiddenInput())
+
+    # Arrival information
+    a_fulltext = forms.CharField(required=True, widget=forms.HiddenInput())
+    a_street = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )  # Not necessary a street (could be a city)
+    a_zipcode = forms.CharField(required=True, widget=forms.HiddenInput())
+    a_city = forms.CharField(required=True, widget=forms.HiddenInput())
+    a_latitude = forms.FloatField(required=True, widget=forms.HiddenInput())
+    a_longitude = forms.FloatField(required=True, widget=forms.HiddenInput())
+
+    # Routing information
+    r_geometry = forms.CharField(required=True, widget=forms.HiddenInput())
+    r_duration = forms.FloatField(required=True, widget=forms.HiddenInput())
+
+    departure_datetime = forms.DateTimeField(
+        required=True,
+        widget=forms.DateTimeInput(
+            attrs={
+                "type": "datetime-local",
+                "class": "form-control",
+                "min": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            },
+        ),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Prevent creating a ride where departure and arrival are identical
+        d_lat = cleaned_data.get("d_latitude")
+        d_lng = cleaned_data.get("d_longitude")
+        a_lat = cleaned_data.get("a_latitude")
+        a_lng = cleaned_data.get("a_longitude")
+
+        # Use a small tolerance for float comparisons
+        if (
+            d_lat is not None
+            and a_lat is not None
+            and d_lng is not None
+            and a_lng is not None
+            and abs(d_lat - a_lat) < 1e-5
+            and abs(d_lng - a_lng) < 1e-5
+        ):
+            self.add_error(
+                "a_fulltext",
+                _("Departure and arrival locations cannot be the same."),
+            )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            widget = field.widget
+            css_class = widget.attrs.get("class", "")
+            if self.errors.get(field_name):
+                widget.attrs["class"] = f"{css_class} is-invalid"
+            else:
+                widget.attrs.setdefault("class", "form-control")
+        now = timezone.now().strftime("%Y-%m-%dT%H:%M")
+        self.fields["departure_datetime"].widget.attrs["min"] = now
+
+
+class CreateRideStep2Form(forms.Form):
+    seats_offered = forms.IntegerField(
+        required=True,
+        min_value=1,
+        max_value=MAXIMUM_SEATS_IN_VEHICLE,
+        widget=forms.NumberInput(
+            attrs={
+                "placeholder": _("Number of seats available for the carpool"),
+                "class": "form-control",
+            },
+        ),
+        help_text=_("Number of seats available for the carpool."),
+    )
+
+    vehicle = forms.ModelChoiceField(
+        required=True,
+        queryset=Vehicle.objects.all(),
+        widget=forms.Select(
+            attrs={
+                "class": "form-control",
+            },
+        ),
+        help_text=_("Select the vehicle you will use for this ride."),
+        label=_("Vehicle"),
+    )
+
+    price = forms.DecimalField(
+        required=True,
+        min_value=0,
+        decimal_places=2,
+        max_value=999,
+        widget=forms.NumberInput(
+            attrs={
+                "placeholder": _("Price per seat"),
+                "class": "form-control",
+            },
+        ),
+    )
+
+    payment_method = forms.MultipleChoiceField(
+        required=False,
+        choices=Ride.PaymentMethod.choices,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+            },
+        ),
+        label=_("Comment (optional)"),
+    )
+
+
 class VehicleForm(forms.ModelForm):
     seats = forms.IntegerField(
         required=True,
@@ -106,8 +236,38 @@ class CreateRideForm(forms.Form):
         widget=forms.CheckboxSelectMultiple,
     )
 
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+            },
+        ),
+        label=_("Comment (optional)"),
+    )
+
     def clean(self):
         cleaned_data = super().clean()
+        # Prevent creating a ride where departure and arrival are identical
+        d_lat = cleaned_data.get("d_latitude")
+        d_lng = cleaned_data.get("d_longitude")
+        a_lat = cleaned_data.get("a_latitude")
+        a_lng = cleaned_data.get("a_longitude")
+
+        # Use a small tolerance for float comparisons
+        if (
+            d_lat is not None
+            and a_lat is not None
+            and d_lng is not None
+            and a_lng is not None
+            and abs(d_lat - a_lat) < 1e-5
+            and abs(d_lng - a_lng) < 1e-5
+        ):
+            self.add_error(
+                "a_fulltext",
+                _("Departure and arrival locations cannot be the same."),
+            )
         price = cleaned_data.get("price_per_seat")
         payment = cleaned_data.get("payment_method")
 
@@ -222,6 +382,17 @@ class EditRideForm(forms.Form):
         widget=forms.CheckboxSelectMultiple,
     )
 
+    comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+            },
+        ),
+        label=_("Comment (optional)"),
+    )
+
     def __init__(self, *args, **kwargs):
         self.ride = kwargs.pop("instance", None)
         super().__init__(*args, **kwargs)
@@ -244,8 +415,15 @@ class EditRideForm(forms.Form):
 
             # The duration was saved using the following command:
             # datetime.timedelta(hours=form.cleaned_data["r_duration"])
-            self.fields["r_duration"].initial = ride.duration.total_seconds() / 3600
-            self.fields["r_geometry"].initial = ride.geometry.geojson
+            self.fields["r_duration"].initial = (
+                ride.duration.total_seconds() / 3600 if ride.duration else None
+            )
+            # ride.geometry may be None for older fixtures/factories — guard access
+            if getattr(ride, "geometry", None):
+                # geometry is a GEOS LineString
+                self.fields["r_geometry"].initial = ride.geometry.geojson
+            else:
+                self.fields["r_geometry"].initial = ""
 
             self.fields["departure_datetime"].initial = timezone.localtime(
                 ride.start_dt
@@ -258,9 +436,30 @@ class EditRideForm(forms.Form):
             self.fields["payment_method"].initial = [
                 method for method in ride.payment_method
             ]
+            self.fields["comment"].initial = ride.comment
 
     def clean(self):
         cleaned_data = super().clean()
+
+        d_lat = cleaned_data.get("d_latitude")
+        d_lng = cleaned_data.get("d_longitude")
+        a_lat = cleaned_data.get("a_latitude")
+        a_lng = cleaned_data.get("a_longitude")
+
+        # Use a small tolerance for float comparisons
+        if (
+            d_lat is not None
+            and a_lat is not None
+            and d_lng is not None
+            and a_lng is not None
+            and abs(d_lat - a_lat) < 1e-5
+            and abs(d_lng - a_lng) < 1e-5
+        ):
+            self.add_error(
+                "a_fulltext",
+                _("Departure and arrival locations cannot be the same."),
+            )
+
         price = cleaned_data.get("price_per_seat")
         payment = cleaned_data.get("payment_method")
 
@@ -316,6 +515,7 @@ class EditRideForm(forms.Form):
         ride.vehicle.seats = self.cleaned_data["seats"]
         ride.price = self.cleaned_data["price_per_seat"]
         ride.payment_method = self.cleaned_data["payment_method"]
+        ride.comment = self.cleaned_data["comment"]
 
         ride.vehicle.save()
         ride.save()

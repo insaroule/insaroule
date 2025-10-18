@@ -11,13 +11,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
-from django.utils.translation import gettext_lazy as _
 
 import environ
 
 env = environ.Env(
     # set casting, default value
     DJANGO_DEBUG=(bool, False),
+    DJANGO_EMAIL_USE_SSL=(bool, False),
+    DJANGO_EMAIL_USE_TLS=(bool, True),
     ALLOW_REGISTRATION=(bool, False),
 )
 
@@ -139,8 +140,8 @@ USE_I18N = True
 LANGUAGE_CODE = "fr"
 
 LANGUAGES = [
-    ("fr", _("French")),
-    ("en", _("English")),
+    ("fr", "Français"),
+    ("en", "English"),
 ]
 
 LOCALE_PATHS = [
@@ -177,8 +178,8 @@ EMAIL_BACKEND = env(
 )
 EMAIL_HOST = env("DJANGO_EMAIL_HOST")
 EMAIL_PORT = env("DJANGO_EMAIL_PORT")
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
+EMAIL_USE_TLS = env("DJANGO_EMAIL_USE_TLS")
+EMAIL_USE_SSL = env("DJANGO_EMAIL_USE_SSL")
 EMAIL_HOST_USER = env("DJANGO_EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env("DJANGO_EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL")
@@ -226,9 +227,16 @@ ADMINS = [
 
 DPO_EMAIL = env("DPO_EMAIL")
 
+TERMS_OF_SERVICE = env("TERMS_OF_SERVICE")
+PRIVACY_POLICY = env("PRIVACY_POLICY")
+LEGAL_NOTICE = env("LEGAL_NOTICE")
+
 EMAIL_NOTIFICATION_THRESHOLD_MINUTES = env.int(
     "EMAIL_NOTIFICATION_THRESHOLD_MINUTES", default=30
 )
+
+# Anonymous access settings
+ANONYMOUS_ACCESS_RIDES_LIST = env.bool("ANONYMOUS_ACCESS_RIDES_LIST", default=True)
 
 # The email that users can use to contact support
 # You can use GitLab Service Desk feature to handle incoming emails
@@ -284,3 +292,6 @@ LOGGING = {
         },
     },
 }
+
+# co2 emission settings
+AVERAGE_CO2_EMISSION_PER_KM = env.float("AVERAGE_CO2_EMISSION_PER_KM", default=114.2)

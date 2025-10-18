@@ -47,6 +47,7 @@
 
 {% block content %}
 <div class="container mt-3">
+    {% if user.is_authenticated %}
     <div class="card mb-4 text-bg-light">
         <div class="card-body">
             <form method="GET">
@@ -54,7 +55,7 @@
                 <input type="hidden" name="d_latlng" id="id_d_latlng" value="{{ filter_departure }}">
                 <input type="hidden" name="a_fulltext" id="id_a_fulltext" value="{{ a_fulltext }}">
                 <input type="hidden" name="a_latlng" id="id_a_latlng" value="{{ filter_arrival }}">
-
+                
                 <div class="row">
                     <div class="col mb-3 mb-lg-0">
                         <!-- Autcomplete for departure --
@@ -79,6 +80,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 
     <div class="row">
         <!-- <div class="col-xl-3 mb-3">
@@ -156,14 +158,22 @@
                                 </div>
                             </div>
                         </div>
+                        {% if user.is_authenticated %}
                         <div class="card-footer bg-white d-flex flex-row">
                             <img src="{% static 'img/avatar.jpg' %}"
                                 class="rounded-circle" width="30" />
                             <span class="ms-2 my-auto fw-semibold text-muted">{{ ride.driver }}</span>
                             <div class="d-flex flex-row gap-2 ms-auto">
-                                <span class="my-auto text-muted">{{ ride.remaining_seats }} {% translate "remaining seats" %}</span>
+                                <span class="my-auto text-muted">
+                                    {% blocktranslate trimmed count ride.remaining_seats as seat_count %}
+                                        {{ seat_count }} remaining seat
+                                    {% plural %}
+                                        {{ seat_count }} remaining seats
+                                    {% endblocktranslate %}
+                                </span>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             {% empty %}
@@ -172,7 +182,7 @@
                     <h5 class="card-title">{% translate "No rides found" %}</h5>
                     <p class="card-text">{% translate "Consider taking the train or posting the first ride on the platform." %}</p>
                     <div class="text-center">
-                        <a href="{% url 'carpool:create' %}" class="btn btn-primary">{% translate "Publish a ride" %}</a>
+                        <a href="{% url 'carpool:create_step1' %}" class="btn btn-primary">{% translate "Publish a ride" %}</a>
                     </div>
 
 
@@ -218,6 +228,7 @@
 {% endblock %}
 
 {% block extrascript %}
+{% if user.is_authenticated %}
 <script src="{% static 'vendors/choices-js/public/assets/scripts/choices.min.js' %}"></script>
 
 <script>
@@ -366,4 +377,5 @@
     }
 
 </script>
+{% endif %}
 {% endblock extrascript %}

@@ -1,0 +1,35 @@
+{% load i18n %}{% translate "Hello" %} {{ driver.username }},
+
+<p>
+    {% blocktranslate trimmed with city_start=ride.start_loc.city city_end=ride.end_loc.city ride_date=ride.start_dt|date %}
+    We noticed that you have a ride scheduled from {{ city_start }} to {{ city_end }} on {{ ride_date }}.
+    {% endblocktranslate %}
+</p>
+
+<p>
+    {% blocktranslate trimmed %}
+    We wanted to let you know that there are other drivers who are also planning to travel along a similar route on the
+    same day.
+    Here are some drivers who might be interested in sharing the ride with you:
+    {% endblocktranslate %}
+    <ul>
+        {% for other_ride in similar_rides %}
+        <li>
+            {% blocktranslate trimmed with driver=other_ride.driver s_city=other_ride.start_loc.city e_city=other_ride.end_loc.city url=ride.get_absolute_url %}
+            <a href="{{ url }}">Ride from {{ s_city }} to {{ e_city }}</a> proposed by {{ driver }} ;
+            {% endblocktranslate %}
+        </li>
+        {% endfor %}
+    </ul>
+</p>
+
+<p>
+    {% blocktranslate trimmed %}
+    Sharing a ride can help reduce costs and make the journey more enjoyable.
+    If you're interested in connecting with any of these drivers, please contact them directly through the platform.
+    {% endblocktranslate %}
+</p>
+
+<p>
+    {{ requester }} {% translate "from the INSA'ROULE team" %}
+</p>

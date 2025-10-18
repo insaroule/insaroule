@@ -25,6 +25,7 @@
                 <li>{% translate "Email:" %} {{ user.email }} {% if user.email_verified %}(verified){% endif %}</li>
                 <li>{% translate "Last login:" %} {{ user.last_login }}</li>
                 <li>{% translate "Date joined:" %} {{ user.date_joined }}</li>
+                <li>{% translate "Preferred language:" %} {{ user.get_preferred_language_display }}</li>
             </ul>
 	    {% comment %}
 	    <h5>{% translate "Rides" %}</h5>

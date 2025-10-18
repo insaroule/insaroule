@@ -6,26 +6,12 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-# Create your models here.
 class ChatRequest(models.Model):
-    class Status(models.TextChoices):
-        PENDING = "PENDING", _("Pending")
-        ACCEPTED = "ACCEPTED", _("Accepted")
-        DECLINED = "DECLINED", _("Declined")
-
     uuid = models.UUIDField(
         verbose_name=_("UUID"),
         primary_key=True,
         editable=False,
         default=uuid4,
-    )
-
-    status = models.CharField(
-        verbose_name=_("status"),
-        choices=Status.choices,
-        max_length=10,
-        help_text=_("Status of the join request"),
-        default=Status.PENDING,
     )
 
     ride = models.ForeignKey(
@@ -52,6 +38,9 @@ class ChatRequest(models.Model):
 
     def get_room_url(self):
         return reverse("chat:room", kwargs={"jr_pk": self.pk})
+
+    def get_mod_room_url(self):
+        return reverse("chat:mod_room", kwargs={"jr_pk": self.pk})
 
     def __str__(self):
         return f"ChatRequest({self.user.username} for {self.ride.uuid})"

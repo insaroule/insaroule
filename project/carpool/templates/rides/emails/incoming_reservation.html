@@ -1,0 +1,15 @@
+{% load i18n %}{% translate "Hello" %} {{ driver.username }},
+
+<p>
+    {% blocktranslate trimmed with departure=ride.start_loc.city arrival=ride.end_loc.city date=ride.start_dt|date:"j F Y" reservation_by=reservation.user %}
+    A new reservation has been made for your ride from {{ departure }} to {{ arrival }} on {{ date }} by {{ reservation_by }}.
+    {% endblocktranslate %}
+</p>
+
+<p>
+    {% blocktranslate trimmed %}
+    You can view the details of this reservation by clicking on the following link:
+    {% endblocktranslate %}<a href="{{ link }}">{{ link }}</a>
+</p>
+
+{% include "emails/consent_footer.txt" %}

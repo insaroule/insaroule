@@ -20,6 +20,12 @@ class User(AbstractUser):
     email = models.EmailField(_("Email Address"), unique=True)
     email_verified = models.BooleanField(default=False)
     last_verification_email_sent = models.DateTimeField(null=True, blank=True)
+    preferred_language = models.CharField(
+        max_length=10,
+        choices=settings.LANGUAGES,
+        default=settings.LANGUAGE_CODE,
+        help_text=_("Preferred language for the user interface."),
+    )
 
     @property
     def has_email_verify_cooldown(self):
@@ -34,6 +40,10 @@ class User(AbstractUser):
 
 
 class UserNotificationPreferences(models.Model):
+    class Meta:
+        verbose_name = "User notification preferences"
+        verbose_name_plural = "User notification preferences"
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -44,4 +54,8 @@ class UserNotificationPreferences(models.Model):
     )
     ride_status_update_notification = models.BooleanField(
         default=True, help_text="Receive notifications for ride status updates."
+    )
+
+    ride_sharing_suggestion_notification = models.BooleanField(
+        default=True, help_text="Receive notifications suggesting to share rides."
     )

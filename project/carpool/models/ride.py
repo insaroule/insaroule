@@ -1,14 +1,12 @@
 from uuid import uuid4
 
 from django.contrib.gis.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-
-
 from multiselectfield import MultiSelectField
 
 
@@ -39,6 +37,16 @@ class RideManager(models.Manager):
             ride.delete()
             return True
         return False
+
+    def filter_upcoming(self):
+        """
+        Function to filter upcoming rides.
+        An upcoming ride is defined as a ride that starts today or in the future.
+        (date part only, time is ignored)
+        """
+        return self.filter(
+            start_dt__date__gte=timezone.now().date(),
+        )
 
 
 class Ride(models.Model):
@@ -164,6 +172,12 @@ class Ride(models.Model):
         blank=True,
     )
 
+    comment = models.TextField(
+        verbose_name=_("comment"),
+        help_text=_("Comment from the driver about the ride"),
+        blank=True,
+    )
+
     objects = RideManager()
 
     @property
@@ -192,3 +206,19 @@ class Ride(models.Model):
                     )
                 }
             )
+        # Ensure start and end locations are not identical
+        if self.start_loc and self.end_loc:
+            try:
+                d_lat = float(self.start_loc.lat)
+                d_lng = float(self.start_loc.lng)
+                a_lat = float(self.end_loc.lat)
+                a_lng = float(self.end_loc.lng)
+            except (TypeError, ValueError):
+                # If coordinates are not set/invalid, skip this check and let other validators catch it
+                return
+
+            # small tolerance for float comparisons
+            if abs(d_lat - a_lat) < 1e-5 and abs(d_lng - a_lng) < 1e-5:
+                raise ValidationError(
+                    {"end_loc": _("Departure and arrival locations cannot be the same.")}
+                )

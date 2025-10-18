@@ -29,9 +29,22 @@
                             {% endfor %}
                         </div>
                         {% endfor %}
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">{% translate "Register" %}</button>
+                        <hr>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="checkConsent" required>
+                                <label class="form-check-label" for="checkConsent">
+                                    {% blocktranslate trimmed %}
+                                    By registering, you agree to our <a href="{{ TERMS_OF_SERVICE }}">Terms Of
+                                        Service</a> and
+                                    <a href="{{ PRIVACY_POLICY }}">Privacy Policy</a>.
+                                    {% endblocktranslate %}
+                                </label>
+                            </div>
                         </div>
+
+
+                        <button type="submit" class="btn btn-primary w-100">{% translate "Register" %}</button>
                     </form>
                 </div>
             </div>

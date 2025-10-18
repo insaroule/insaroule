@@ -1,152 +1,42 @@
 import datetime
 import json
 
-from asgiref.sync import sync_to_async
 from chat.models import ChatRequest
-from chat.tasks import send_email_confirmed_ride, send_email_declined_ride
-from django.contrib.auth.decorators import login_required, permission_required
+from carpool.tasks import (
+    send_email_confirmed_ride,
+    send_email_declined_ride,
+    send_email_incoming_reservation_to_driver,
+)
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import GEOSGeometry, Point
 from django.contrib.gis.measure import D
-from django.core.paginator import Paginator
-from django.db.models.functions import TruncDate
-from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import PermissionDenied
-
+from django.core.paginator import Paginator
+from django.db.models import Count, ExpressionWrapper, F, IntegerField
+from django.db.models.functions import TruncDate
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods
-from django.contrib import messages
-from django.utils.translation import gettext as _
-
-from carpool.forms import CreateRideForm, EditRideForm, VehicleForm
-from carpool.models import Location, Vehicle
-from carpool.models.statistics import Statistics, MonthlyStatistics
-from carpool.models.ride import Ride
-from carpool.tasks import get_autocompletion, get_routing
+from django.urls import reverse
 from django.utils.timezone import localtime
-from django.utils import timezone
-from django.db.models import Count, F, ExpressionWrapper, IntegerField
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_http_methods
+from carpool.templatetags.duration import duration
+
+from carpool.forms import CreateRideForm, EditRideForm
+from carpool.models import Location, Vehicle
+from carpool.models.reservation import Reservation
+from carpool.models.ride import Ride
 
 import logging
-
-
-@permission_required(["carpool.view_statistics"])
-def bo_statistics_json_monthly(request):
-    # Get labels for the current academic year (from September to August)
-    now = timezone.now()
-    if now.month >= 9:
-        start_year = now.year
-    else:
-        start_year = now.year - 1
-    labels = []
-    for month in range(9, 13):
-        labels.append(f"{month:02d}-{start_year}")
-    for month in range(1, 9):
-        labels.append(f"{month:02d}-{start_year + 1}")
-    monthly_stats = MonthlyStatistics.objects.filter_by_academic_year(start_year)
-    monthly_total_rides = [stat.total_rides for stat in monthly_stats]
-    monthly_total_users = [stat.total_users for stat in monthly_stats]
-    monthly_total_distance = [stat.total_distance for stat in monthly_stats]
-    monthly_total_co2 = [stat.total_co2 for stat in monthly_stats]
-
-    data = {
-        "labels": labels,
-        "monthly_total_rides": monthly_total_rides,
-        "monthly_total_users": monthly_total_users,
-        "monthly_total_distance": monthly_total_distance,
-        "monthly_total_co2": monthly_total_co2,
-    }
-
-    return JsonResponse(data)
-
-
-@permission_required(["carpool.view_statistics"])
-def bo_statistics(request):
-    if Statistics.objects.count() == 0:
-        # Create the Statistics object if it does not exist
-        Statistics.objects.create()
-
-    context = {
-        "last_updated_at": Statistics.objects.first().updated_at,
-        "total_users": Statistics.objects.first().total_users,
-        "total_rides": Statistics.objects.first().total_rides,
-        "total_distance": Statistics.objects.first().total_distance,
-        "total_co2": Statistics.objects.first().total_co2,
-    }
-
-    return render(request, "rides/back-office/statistics.html", context)
-
-
-@login_required
-def vehicles_create(request):
-    form = VehicleForm()
-    if request.method == "POST":
-        form = VehicleForm(request.POST)
-        if form.is_valid():
-            vehicle = form.save(commit=False)
-            vehicle.driver = request.user
-            vehicle.save()
-            logging.info(f"Vehicle {vehicle.pk} created by user {request.user.pk}")
-            return JsonResponse(
-                {
-                    "status": "OK",
-                    "vehicle": {
-                        "id": vehicle.pk,
-                        "name": vehicle.name,
-                        "description": vehicle.description,
-                        "seats": vehicle.seats,
-                        "geqCO2_per_km": vehicle.geqCO2_per_km,
-                    },
-                },
-                status=201,
-            )
-        else:
-            logging.error(f"Vehicle creation form invalid: {form.errors}")
-            return JsonResponse({"status": "NOK", "errors": form.errors}, status=400)
-    return JsonResponse(
-        {"status": "NOK", "error": "Invalid request method"}, status=400
-    )
-
-
-@login_required
-def vehicles_update(request, pk):
-    vehicle = get_object_or_404(Vehicle, pk=pk)
-    if vehicle.driver != request.user:
-        return JsonResponse(
-            {"status": "NOK", "error": "You are not the driver of this vehicle"},
-            status=403,
-        )
-
-    form = VehicleForm(instance=vehicle)
-    if request.method == "POST":
-        form = VehicleForm(request.POST, instance=vehicle)
-        if form.is_valid():
-            form.save()
-            logging.info(f"Vehicle {vehicle.pk} updated by user {request.user.pk}")
-            return JsonResponse(
-                {
-                    "status": "OK",
-                    "vehicle": {
-                        "id": vehicle.pk,
-                        "name": vehicle.name,
-                        "description": vehicle.description,
-                        "seats": vehicle.seats,
-                        "geqCO2_per_km": vehicle.geqCO2_per_km,
-                    },
-                },
-                status=201,
-            )
-        return JsonResponse({"status": "NOK", "errors": form.errors}, status=400)
-
-    return JsonResponse(
-        {"status": "NOK", "error": "Invalid request method"}, status=400
-    )
 
 
 @login_required
 def list_my_rides(request):
     p_rides = Ride.objects.filter(driver=request.user).order_by("start_dt")
-    s_rides = ChatRequest.objects.filter(user=request.user).order_by("ride__start_dt")
+    s_rides = Reservation.objects.filter(user=request.user).order_by("ride__start_dt")
 
     s_paginator = Paginator(s_rides, 3)
     p_paginator = Paginator(p_rides, 3)
@@ -166,8 +56,8 @@ def list_my_rides(request):
 
 
 @login_required
-def ride_map(request):
-    rides = Ride.objects.all()
+def rides_map(request):
+    rides = Ride.objects.filter_upcoming()
     rides_geo = []
 
     for ride in rides:
@@ -187,11 +77,9 @@ def ride_map(request):
                     "end_name": ride.end_loc.fulltext,
                     "end_lat": ride.end_loc.lat,
                     "end_lon": ride.end_loc.lng,
-                    "start_d": start_dt_local.strftime("%A %d %B %Y"),
-                    "start_t": start_dt_local.strftime("%H:%M"),
                     "start_dt": start_dt_local.isoformat(),
                     "price": ride.price,
-                    "duration": f"{int(ride.duration.total_seconds() // 3600)}h{int((ride.duration.total_seconds() % 3600) // 60)}",
+                    "duration": duration(ride.duration),
                 }
             )
 
@@ -200,45 +88,101 @@ def ride_map(request):
 
 
 @require_http_methods(["POST"])
-def change_jrequest_status(request, jr_pk):
-    join_request = get_object_or_404(ChatRequest, pk=jr_pk)
+@login_required
+def cancel_reservation(request):
+    reservation = get_object_or_404(Reservation, pk=request.POST.get("reservation_pk"))
+    next_url = request.GET.get("next", reverse("chat:index"))
 
-    if request.user != join_request.ride.driver:
-        return HttpResponse("You are not the driver of this post", status=403)
+    if request.user != reservation.user:
+        # Only the user who made the reservation can cancel it
+        return HttpResponse(
+            "You are not allowed to cancel this reservation", status=403
+        )
+
+    if reservation.status == Reservation.Status.CANCELED:
+        messages.warning(request, _("This reservation is already canceled."))
+        return HttpResponse("This reservation is already canceled", status=400)
+
+    reservation.status = Reservation.Status.CANCELED
+
+    if reservation.user in reservation.ride.rider.all():
+        # Check if the user is already in the ride's riders
+        messages.warning(request, _("You have been removed from the ride's riders."))
+        reservation.ride.rider.remove(reservation.user)
+
+    messages.warning(request, _("You have successfully canceled your reservation."))
+    reservation.save()
+    return redirect(next_url)
+
+
+@require_http_methods(["POST"])
+@login_required
+def update_reservation(request):
+    reservation = get_object_or_404(Reservation, pk=request.POST.get("reservation_pk"))
+    next_url = request.GET.get("next", reverse("chat:index"))
+
+    if request.user != reservation.ride.driver:
+        return HttpResponse("You are not the driver of this ride.", status=403)
+
+    if reservation.status == Reservation.Status.CANCELED:
+        return HttpResponse("This reservation is already canceled.", status=400)
 
     action = request.POST.get("action")
+
     if action == "accept":
-        join_request.status = ChatRequest.Status.ACCEPTED
-        # Send an email to the user to notify them that their request has been accepted
-        send_email_confirmed_ride.delay(join_request.pk)
-        # Add the user to the ride
-        join_request.ride.rider.add(join_request.user)
+        reservation.status = Reservation.Status.ACCEPTED
+        send_email_confirmed_ride.delay(reservation.pk)
+        reservation.ride.rider.add(reservation.user)
 
     elif action == "decline":
-        join_request.status = ChatRequest.Status.DECLINED
-        # Remove the user to the ride if they were added
-        if join_request.user in join_request.ride.rider.all():
-            join_request.ride.rider.remove(join_request.user)
-        # Send an email to the user to notify them that their request has been declined
-        send_email_declined_ride.delay(join_request.pk)
+        reservation.status = Reservation.Status.DECLINED
+        if reservation.user in reservation.ride.rider.all():
+            # Check if the user is already in the ride's riders
+            reservation.ride.rider.remove(reservation.user)
 
+        send_email_declined_ride.delay(reservation.pk)
     else:
         return HttpResponse("Invalid action", status=400)
 
-    join_request.save()
-    return redirect("chat:index")
+    reservation.save()
+    return redirect(next_url)
 
 
 @login_required
-def rides_subscribe(request, pk):
-    ride = get_object_or_404(Ride, pk=pk)
+def rides_subscribe(request, ride_pk):
+    """Create a reservation for the given ride."""
+    ride = get_object_or_404(Ride, pk=ride_pk)
     if request.method == "POST":
-        if ChatRequest.objects.filter(user=request.user, ride=ride).exists():
-            messages.error(request, _("You have already requested to join this ride."))
+        # Get the chat request
+        ChatRequest.objects.get(user=request.user, ride=ride)
+
+        if Reservation.objects.filter(
+            user=request.user, ride=ride, status__in=["DECLINED", "ACCEPTED"]
+        ).exists():
+            logging.warning(f"User {request.user} has already booked ride {ride.pk}")
+            messages.error(request, _("You have already booked this ride."))
             return redirect("carpool:detail", pk=ride.pk)
 
-        ride.join_requests.create(user=request.user)
+        # Subscribe the user to the ride
+        reservation = ride.reservations.create(user=request.user)
+        logging.info(f"User {request.user} booked ride {ride.pk}")
+
+        site_url = request.scheme + "://" + request.get_host()
+        send_email_incoming_reservation_to_driver.delay(
+            site_url,
+            reservation_pk=reservation.pk,
+        )
+
+        messages.success(request, _("You have successfully booked this ride."))
+
+        # Redirect to chat:room with join_request associated to this user and ride
+        join_request = ChatRequest.objects.filter(user=request.user, ride=ride).first()
+        if join_request:
+            return redirect("chat:room", jr_pk=join_request.pk)
         return redirect("chat:index")
+
+        messages.info(request, _("You subscribed to this ride."))
+
     return redirect("carpool:detail", pk=ride.pk)
 
 
@@ -246,12 +190,16 @@ def rides_subscribe(request, pk):
 def rides_detail(request, pk):
     # Check if the user has already booked this ride
     # used to disabled the subscribe button
+    reservation = request.user.reservations.filter(
+        ride__pk=pk, status__in=["PENDING", "ACCEPTED", "DECLINED"]
+    ).first()
     chat_request = ChatRequest.objects.filter(user=request.user, ride__pk=pk).first()
 
     ride = get_object_or_404(Ride, pk=pk)
     context = {
         "ride": ride,
         "geometry": ride.geometry.geojson,
+        "reservation": reservation,
         "chat_request": chat_request,
     }
 
@@ -303,12 +251,13 @@ def rides_delete(request, pk):
     return render(request, "rides/delete.html", context)
 
 
-@login_required
 def rides_list(request):
+    if not settings.ANONYMOUS_ACCESS_RIDES_LIST and not request.user.is_authenticated:
+        # We have a global setting that disable anonymous access to the rides list
+        return redirect(f"{reverse('accounts:login')}?next={request.path}")
+
     # Get all rides that are whether today's date or in the future
-    rides = Ride.objects.filter(
-        start_dt__date__gte=datetime.date.today(),
-    )
+    rides = Ride.objects.filter_upcoming()
 
     # ====================================================== #
     # Filters
@@ -425,6 +374,7 @@ def rides_create(request):
                 price=form.cleaned_data["price_per_seat"],
                 geometry=GEOSGeometry(form.cleaned_data["r_geometry"], srid=4326),
                 duration=datetime.timedelta(hours=form.cleaned_data["r_duration"]),
+                comment=form.cleaned_data["comment"],
             )
             return redirect("carpool:detail", pk=ride.pk)
 
@@ -433,29 +383,3 @@ def rides_create(request):
         "payment_methods": Ride.PaymentMethod.choices,
     }
     return render(request, "rides/create.html", context)
-
-
-@login_required
-async def api_auto_completion(request) -> JsonResponse:
-    """An async API proxy endpoint to get latitude and
-    longitude for a given query.
-    """
-    text = request.GET.get("text", "")
-    if not text:
-        return JsonResponse({"status": "NOK"}, status=400)
-
-    task = get_autocompletion.delay(text)
-    result = await sync_to_async(task.get)(timeout=5)  # blocking I/O offloaded
-    return JsonResponse({"status": "OK", "results": result}, safe=False, status=200)
-
-
-@login_required
-async def api_routing(request) -> JsonResponse:
-    """An async API proxy endpoint to get routing information."""
-    start = request.GET.get("start", "")
-    end = request.GET.get("end", "")
-    if not start or not end:
-        return JsonResponse({"status": "NOK"}, status=400)
-    task = get_routing.delay(start, end)
-    res = await sync_to_async(task.get)(timeout=5)  # blocking I/O offloaded
-    return JsonResponse(res, safe=False)

@@ -1,11 +1,16 @@
 {% extends 'registration/base.html' %}
-{% load i18n %}
+{% load static i18n %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow-sm">
+                <div class="card-header">
+                    <span class="card-title text-center mb-0 text-reset">
+                        INSA'ROULE - {% translate "Carpooling platform" %}
+                    </span>
+                </div>
                 <div class="card-body">
                     <h2 class="card-title mb-4 text-center">{% translate "Sign In" %}</h2>
                     <form action="" method="post">

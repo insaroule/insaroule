@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-02 08:28+0200\n"
+"POT-Creation-Date: 2025-10-07 19:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,80 +18,83 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: project/settings/production.py:142
-msgid "French"
-msgstr "Français"
-
-#: project/settings/production.py:143
-msgid "English"
-msgstr "Anglais"
-
 #: templates/emails/consent_footer.txt:3
 msgid ""
-"You are receiving this email because you consented to receive our \n"
-"communications. You may withdraw your consent at any time by going \n"
-"on your account's settings. \n"
+"You are receiving this email because you consented to receive our "
+"communications. You may withdraw your consent at any time by going on your "
+"account's settings."
 msgstr ""
-"Vous recevez cet e-mail car vous avez consenti à recevoir nos \n"
-"communications. Vous pouvez retirer votre consentement à tout \n"
-"moment en vous rendant dans les paramètres de votre compte. \n"
+"Vous recevez cet e-mail car vous avez consenti à recevoir nos "
+"communications. Vous pouvez retirer votre consentement à tout moment en "
+"allant dans les paramètres de votre compte."
+
 
 #: templates/emails/mandatory_footer.txt:3
 msgid ""
-"You are receiving this email because it contains essential \n"
-"information regarding your account or our legal obligations.To stop\n"
-"receiving this type of mandatory communication, you must close your\n"
-"account. \n"
+"You are receiving this email because it contains essential information "
+"regarding your account or our legal obligations.To stop receiving this type "
+"of mandatory communication, you must close your account."
 msgstr ""
-"Vous recevez cet e-mail car il contient des informations essentielles \n"
-"concernant votre compte ou nos obligations légales. Pour ne plus \n"
-"recevoir ce type de communication obligatoire, vous devez fermer \n"
-"votre compte. \n"
+"Vous recevez cet e-mail car il contient des informations essentielles "
+"concernant votre compte ou nos obligations légales. Pour ne plus recevoir ce "
+"type de communication obligatoire, vous devez fermer votre compte."
 
 #: templates/emails/signature.txt:1
 msgid "Your favorite carpooling app"
 msgstr "Votre application préférée de covoiturage"
 
-#: templates/includes/navbar.html:14
+#: templates/includes/footer.html:3
+msgid "Terms of Service"
+msgstr "Conditions d'utilisation"
+
+#: templates/includes/footer.html:4
+msgid "Legal Notice"
+msgstr "Mentions légales"
+
+#: templates/includes/navbar.html:17
 msgid "Rides"
 msgstr "Trajets"
 
-#: templates/includes/navbar.html:18
+#: templates/includes/navbar.html:23
 msgid "Map View"
 msgstr "Carte"
 
-#: templates/includes/navbar.html:22
+#: templates/includes/navbar.html:27
 msgid "My Rides"
 msgstr "Mes trajets"
 
-#: templates/includes/navbar.html:26
+#: templates/includes/navbar.html:31
 msgid "Publish a ride"
 msgstr "Publier un trajet"
 
-#: templates/includes/navbar.html:33
+#: templates/includes/navbar.html:40
 msgid "Messages"
 msgstr "Messages"
 
-#: templates/includes/navbar.html:57
+#: templates/includes/navbar.html:59
 msgid "My Account"
 msgstr "Mon compte"
 
-#: templates/includes/navbar.html:58
+#: templates/includes/navbar.html:60
 msgid "Report Issue"
 msgstr "Signaler un problème"
 
-#: templates/includes/navbar.html:60
+#: templates/includes/navbar.html:62
 msgid "Back Office"
 msgstr "Back Office"
 
-#: templates/includes/navbar.html:63
+#: templates/includes/navbar.html:65
 msgid "Admin Panel"
 msgstr "Panneau d'administration"
 
-#: templates/includes/navbar.html:69
+#: templates/includes/navbar.html:71
 msgid "Moderation"
 msgstr "Modération"
 
-#: templates/includes/navbar.html:78
+#: templates/includes/navbar.html:80
 msgid "Logout"
 msgstr "Se déconnecter"
+
+#: templates/includes/navbar.html:87
+msgid "Login"
+msgstr "Se connecter"

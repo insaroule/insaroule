@@ -65,6 +65,15 @@
                         </label>
                     </div>
                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                            id="ride_sharing_suggestion_notification" 
+                            {%if user.notification_preferences.ride_sharing_suggestion_notification%}checked{%endif%}
+                            name="ride_sharing_suggestion_notification">
+                        <label class="form-check-label" for="ride_sharing_suggestion_notification">
+                            {% translate "Ride sharing suggestion notifications" %}
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="mandatory_notifications"
                             disabled checked>
                         <label class="form-check-label" for="mandatory_notifications">

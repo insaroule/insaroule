@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
-{% load static %}}
-{% load i18n %}
+{% load static i18n %}
 {% block content %}
+{% get_current_language as LANGUAGE_CODE %}
+
 <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
 <div class="card mb-2 text-bg-light map-filter-card">
     <div class="card-body">
@@ -16,7 +17,7 @@
       </form>
     </div>
   </div>
-<div id="map" style="height: 90vh;"></div>
+<div id="map" style="height: 87.5vh;"></div>
 
 <style>
     @media (min-width: 769px) {
@@ -51,9 +52,9 @@
     display: none;
     width: 300px;
 ">
-    <h4>Ride's information</h4>
+    <h4>{% translate "Ride's information" %}</h4>
     <div id="ride-details">
-        <p>Select a ride</p>
+        <p>{% translate "Select a ride" %}</p>
     </div>
 </div>
 
@@ -84,9 +85,9 @@
   const allBounds = [];
   const colors = [
     '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
-    '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000',
-    '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#641d1d',
+    '#008080', '#e6beff', '#9a6324', '#2E2D22', '#800000',
+    '#aaffc3', '#808000', '#545474', '#000075', '#808080'
   ];
 
   document.getElementById('start_dt').addEventListener('change', function () {
@@ -165,16 +166,24 @@
     const card = document.getElementById('ride-info-card');
     const details = document.getElementById('ride-details');
     
+    console.debug(ride.start_dt);
+
+    const startDate = new Date(ride.start_dt);
+    const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const optionsTime = { hour: '2-digit', minute: '2-digit' };
+    const start_d = startDate.toLocaleDateString("{{ LANGUAGE_CODE }}", optionsDate);
+    const start_t = startDate.toLocaleTimeString("{{ LANGUAGE_CODE }}", optionsTime);
+
     details.innerHTML = `
         <button id="close-info" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
-        <p><strong>${ride.start_d}</strong></p>
-        <p><strong>Start :</strong> ${ride.start_name}</p>
-        <p><strong>Destination :</strong> ${ride.end_name}</p>
-        <p><strong>Hour :</strong> ${ride.start_t}</p>
-        <p><strong>Duration :</strong> ${ride.duration}</p>
-        <p><strong>Price :</strong> ${ride.price} €</p>
+        <p><strong>${start_d}</strong></p>
+        <p><strong>{% translate "Start:" %}</strong> ${ride.start_name}</p>
+        <p><strong>{% translate "Destination:" %}</strong> ${ride.end_name}</p>
+        <p><strong>{% translate "Hour:" %}</strong> ${start_t}</p>
+        <p><strong>{% translate "Duration:" %}</strong> ${ride.duration}</p>
+        <p><strong>{% translate "Price:" %}</strong> ${ride.price} €</p>
         <div class="text-center" style="position:absolute; bottom:10px; right:10px; background:none; border:none; font-size:20px; cursor:pointer;">
-            <a href="/${ride.uuid}/" class="btn btn-primary">See more</a>
+            <a href="/${ride.uuid}/" class="btn btn-primary">{% translate "See more" %}</a>
         </div>
     `;
     

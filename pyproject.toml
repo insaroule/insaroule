@@ -14,6 +14,7 @@ dependencies = [
     "gunicorn>=23.0.0",
     "psycopg>=3.2.9",
     "requests>=2.32.4",
+    "tblib>=3.1.0",
     "uvicorn-worker>=0.3.0",
     "uvicorn[standard]>=0.35.0",
 ]
@@ -32,7 +33,7 @@ dev = [
 
 [tool.coverage.report]
 fail_under = 100
-omit = ["*/migrations/*", "manage.py"]
+omit = ["*/migrations/*", "manage.py", "asgi.py", "wsgi.py", "chat/routing.py"]
 exclude_also = ["^\\s*def __str__\\(", "if settings\\.DEBUG:"]
 
 show_missing = true
@@ -89,3 +90,20 @@ cmd = "uv run celery -A project beat -l info"
 help = "Alias for running manage.py"
 cwd = "project"
 cmd = "uv run manage.py"
+
+[tool.poe.tasks.coverage-test]
+help = "Run the test suite with coverage"
+cwd = "project"
+env = { "DJANGO_SETTINGS_MODULE" = "project.settings.testing" }
+cmd = "uv run coverage run --rcfile=../pyproject.toml --source='.' --branch manage.py test"
+
+[tool.poe.tasks.coverage-report]
+help = "Generate a coverage report"
+cwd = "project"
+cmd = "uv run coverage report --rcfile=../pyproject.toml"
+
+[tool.poe.tasks.coverage-html]
+help = "Generate an HTML coverage report"
+cwd = "project"
+cmd = "uv run coverage html --rcfile=../pyproject.toml"
+

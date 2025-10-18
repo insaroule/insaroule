@@ -15,6 +15,10 @@ class UserAdmin(BaseUserAdmin):
             _("Email verification"),
             {"fields": ("email_verified", "last_verification_email_sent")},
         ),
+        (
+            _("Preferences"),
+            {"fields": ("preferred_language",)},
+        ),
     )
 
 

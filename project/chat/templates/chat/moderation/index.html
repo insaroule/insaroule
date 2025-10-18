@@ -1,21 +1,43 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
 <div class="container mt-3">
     <h1>{% translate "Moderation center" %}</h1>
     {% include 'chat/moderation/search.html' %}
+    
     <table class="table table-striped table-bordered">
         <thead>
             <tr>
                 <form action="" method="get">
                     <th scope="col">#</th>
-                    <th scope="col">{% translate "Chat" %}</th>
                     <th scope="col">
-                        <div class="d-flex flex-row justify-content-between align-items-center">
-                            <span>{% translate "Reported" %}</span>
+                        <div class="d-flex flex-row justify-content-between">
+                            <span>{% translate "Chat" %}</span>
+                            <div class="dropdown ms-auto">
+                                <i class="bi bi-three-dots-vertical" data-bs-toggle="dropdown" aria-expanded="false"></i>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        {% if request.GET.past %}
+                                            <a class="dropdown-item" href="{{ request.path }}{% querystring past=None %}">
+                                                {% translate "Hide past rides" %}
+                                            </a>
+                                        {% else %}
+                                            <a class="dropdown-item" href="{{ request.path }}{% querystring past=1 %}">
+                                                {% translate "Show past rides" %}
+                                            </a>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-
+                    </th>
+                    <th scope="col">
+                            <span>{% translate "Reported" %}</span>
+                    </th>
+                    <th scope="col">
+                            <span>{% translate "Total Messages" %}</span>
                     </th>
                 </form>
             </tr>
@@ -26,16 +48,53 @@
                 <th scope="row">{{ forloop.counter }}</th>
                 <td><a href="{% url 'chat:mod_room' chat.uuid %}">{{ chat.uuid }}</a></td>
                 <td>{{ chat.reports.exists }}</td>
+                <td>{{ chat.messages.count }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3" class="text-center">{% translate "No chats to moderate" %}</td>
+                {% if ride %}
+                <td colspan="4" class="text-center">{% translate "No chats to moderate for ride" %} {{ ride }}</td>
+                {% else %}
+                <td colspan="4" class="text-center">{% translate "No chats to moderate" %}</td>
+                {% endif %}
             </tr>
             {% endfor %}
 
         </tbody>
     </table>
 
+    <nav aria-label="Page navigation" class="my-3">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous page -->
+                    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% endif %}"
+                            aria-label="{% translate 'Previous' %}">
+                            {% translate "Previous" %}
+                        </a>
+                    </li>
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if i == 1 or i == page_obj.paginator.num_pages or i >= page_obj.number|add:'-1' and i <= page_obj.number|add:'1' %}
+                            <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                                <a class="page-link" href="{% querystring page=i %}">{{ i }}</a>
+                            </li>
+                        {% elif i == page_obj.number|add:'-2' or i == page_obj.number|add:'2' %}
+                            <li class="page-item">
+                                <span class="page-link pe-none">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Next page -->
+                    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% endif %}"
+                            aria-label="{% translate 'Next' %}">
+                            {% translate "Next" %}
+                        </a>
+                    </li>
+                </ul>
+            </nav>
 
 
 </div>

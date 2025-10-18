@@ -1,4 +1,5 @@
 from django.contrib.auth import views as auth_views
+from accounts.views.registration import CustomLoginView as LoginView
 from django.urls import path, reverse_lazy
 
 from accounts.forms import PasswordResetForm, SetPasswordForm
@@ -13,7 +14,7 @@ from accounts.views.verify_email import (
 app_name = "accounts"
 
 urlpatterns = [
-    path("login/", auth_views.LoginView.as_view(), name="login"),
+    path("login/", LoginView.as_view(), name="login"),
     path("logout/", auth_views.logout_then_login, name="logout"),
     path("register/", register, name="register"),
     path("", profile.user_profile, name="me"),
