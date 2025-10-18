@@ -110,10 +110,14 @@
         </div>
         <div class="row mt-3">
             <div class="col">
-                <a href="{% url 'carpool:list' %}" class="btn btn-secondary w-100">Retour</a>
+                <a href="{% url 'carpool:list' %}" class="btn btn-secondary w-100">
+                    {% translate "Cancel" %}
+                </a>
             </div>
             <div class="col">
-                <button class="btn btn-primary w-100" type="submit">Étape suivante</button>
+                <button class="btn btn-primary w-100" type="submit">
+                    {% translate "Publish ride" %}
+                </button>
             </div>
         </div>
     </form>
