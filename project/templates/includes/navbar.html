@@ -28,7 +28,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" 
-                    {% if request.resolver_match.url_name == 'create' %}aria-current="page"{% endif %} href="{% url 'carpool:create' %}">{% translate "Publish a ride" %}</a>
+                    {% if request.resolver_match.url_name == 'create' %}aria-current="page"{% endif %} href="{% url 'carpool:create_step1' %}">{% translate "Publish a ride" %}</a>
                 </li>
                 {% endif %}
             </ul>

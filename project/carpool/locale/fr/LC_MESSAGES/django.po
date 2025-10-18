@@ -542,7 +542,7 @@ msgstr "Véhicule enregistré avec succès !"
 #: carpool/templates/rides/create.html:771
 #: carpool/templates/rides/create.html:781
 msgid "seat"
-msgstr "sièges"
+msgstr "siège"
 
 #: carpool/templates/rides/delete.html:40
 #: carpool/templates/rides/detail.html:151
