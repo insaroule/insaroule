@@ -44,7 +44,9 @@ class Location(models.Model):
     )
 
     def __str__(self):
-        return f"Location({self.lat}, {self.lng})"
+        return (
+            f"Location({self.fulltext if self.fulltext else f'{self.lat}, {self.lng}'})"
+        )
 
 
 class Step(models.Model):
