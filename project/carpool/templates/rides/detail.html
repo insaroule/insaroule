@@ -45,8 +45,13 @@
         <input type="hidden" name="" id="id_a_longitude" value="{{ ride.end_loc.lng|stringformat:"g" }}">
         <input type="hidden" name="" id="id_r_geometry" value="{{ geometry|default_if_none:"" }}">
 
-
-        <h1>{{ ride.start_dt|date:"l j F Y" }}</h1>
+        <div class="d-flex justify-content-between mb-2">
+            <h1>{{ ride.start_dt|date:"l j F Y" }}</h1>
+            <div class="my-auto">
+                    <a href="{% url 'carpool:edit' ride.pk %}" class="btn btn-outline-secondary">{% translate "Edit" %}</a>
+                    <a href="{% url 'carpool:delete' ride.pk %}" class="btn btn-outline-danger">{% translate "Delete" %}</a>
+            </div>
+        </div>
         <div class="row">
             <div class="col-xl-9">
                 <div class="card mb-3" style="background-color: #d2f4fa;">
@@ -55,23 +60,31 @@
                             <div class="d-grid">
                                 <div class="d-flex flex-row">
                                     <div class="d-flex flex-column me-2 gap-1">
-                                        <span class="fw-semibold">{{ ride.start_dt|date:"H:i" }}</span>
-                                        <span class="text-muted small text-end">{{ ride.duration|duration }}</span>
-                                        <span class="fw-semibold">{{ ride.end_dt|date:"H:i" }}</span>
+                                        <span class="fw-semibold mb-auto">{{ ride.start_dt|date:"H:i" }}</span>
+                                        <span class="fw-semibold mt-auto">{{ ride.end_dt|date:"H:i" }}</span>
                                     </div>
                                     <div class="d-flex flex-column mx-1 my-1">
                                         <div class="circle"></div>
                                         <div class="line"></div>
+                                        {% for step in ride.steps.all %}
                                         <div class="circle"></div>
-
+                                        <div class="line"></div>
+                                        {% endfor %}
+                                        <div class="circle"></div>
                                     </div>
                                     <div class="d-flex flex-column ms-2">
-                                        <span>{{ ride.start_loc.fulltext }}</span>
+                                        <span class="mb-auto">{{ ride.start_loc.fulltext }}</span>
+                                        {% for step in ride.steps.all %}
+                                            <span>{{ step.location.fulltext }}</span>
+                                        {% empty %}
                                         <span class="h-100"></span>
-                                        <span>{{ ride.end_loc.fulltext }}</span>
+                                        {% endfor %}
+                                        <span class="mt-auto">{{ ride.end_loc.fulltext }}</span>
                                     </div>
                                 </div>
                             </div>
+
+                            <span class="text-muted small text-end">{{ ride.duration|duration }}</span>
                         </div>
                     </div>
                 </div>
@@ -146,10 +159,7 @@
                         <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">{% translate "See the discussion" %}</a>
                     {% endif %}
                 {% else %}
-                <div class="d-flex flex-row gap-3">
-                    <a href="{% url 'carpool:edit' ride.pk %}" class="btn btn-warning w-100 my-auto">{% translate "Edit ride" %}</a>
-                    <a href="{% url 'carpool:delete' ride.pk %}" class="btn btn-danger w-100 my-auto">{% translate "Delete ride" %}</a>
-                </div>
+               
 
                 {% endif %}
                 {% if  perms.chat.can_moderate_messages %}

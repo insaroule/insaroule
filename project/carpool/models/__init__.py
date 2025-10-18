@@ -50,8 +50,6 @@ class Location(models.Model):
 
 
 class Step(models.Model):
-    name = models.CharField(verbose_name=_("name"), max_length=50)
-
     location = models.ForeignKey(
         verbose_name=_("localisation"),
         help_text=_("Location of the step"),
@@ -66,7 +64,7 @@ class Step(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return f"Step({self.location}, order={self.order})"
 
 
 class Vehicle(models.Model):
