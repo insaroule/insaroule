@@ -21,11 +21,6 @@ def create_step1(request):
         if "departure_datetime" in cleaned:
             cleaned["departure_datetime"] = cleaned["departure_datetime"].isoformat()
 
-        # if "start_loc" in cleaned:
-        #     cleaned["start_loc"] = cleaned["start_loc"].id
-        # if "end_loc" in cleaned:
-        #     cleaned["end_loc"] = cleaned["end_loc"].id
-
         request.session["ride_step1"] = cleaned
         request.session.modified = True
         return redirect("carpool:create_step2")
@@ -91,9 +86,3 @@ def create_step2(request):
         "payment_methods": Ride.PaymentMethod.choices,
     }
     return render(request, "rides/creation/step2.html", context)
-
-
-@login_required
-def create_step3(request):
-    context = {}
-    return render(request, "rides/creation/step3.html", context)
