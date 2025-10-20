@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static 'vendors/leaflet/leaflet.css' %}"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <link rel="stylesheet" href="{% static 'vendors/choices-js/public/assets/styles/choices.min.css' %}" />
+<link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
 <style>
     .choices__inner {
         background-color: #ffffff !important;
@@ -33,81 +34,107 @@
 {% block content %}
 <div class="container my-3">
     <form action="" method="post">
-        {% csrf_token %} 
-    <h1>Publication d'un trajet</h1>
-    {% include 'rides/creation/progress.html' with value=25 %}
+        {% csrf_token %}
+        <h1>Publication d'un trajet</h1>
+        {% include 'rides/creation/progress.html' with value=25 %}
 
-    <div class="row">
-        <div id="hidden">
-            {# Departure information #}
-            {{ form.d_fulltext }}
-            {{ form.d_street }}
-            {{ form.d_city }}
-            {{ form.d_zipcode }}
-            {{ form.d_latitude }}
-            {{ form.d_longitude }}
-            {# Arrival information #}
-            {{ form.a_fulltext }}
-            {{ form.a_street }}
-            {{ form.a_city }}
-            {{ form.a_zipcode }}
-            {{ form.a_latitude }}
-            {{ form.a_longitude }}
-            {# Routing information #}
-            {{ form.r_geometry }}
-            {{ form.r_duration }}
+        <div class="row">
+            <div id="hidden">
+                {# Departure information #}
+                {{ form.departure.fulltext }}
+                {{ form.departure.street }}
+                {{ form.departure.city }}
+                {{ form.departure.zipcode }}
+                {{ form.departure.latitude }}
+                {{ form.departure.longitude }}
+                {# Arrival information #}
+                {{ form.arrival.fulltext }}
+                {{ form.arrival.street }}
+                {{ form.arrival.city }}
+                {{ form.arrival.zipcode }}
+                {{ form.arrival.latitude }}
+                {{ form.arrival.longitude }}
+                {# Routing information #}
+                {{ form.r_geometry }}
+                {{ form.r_duration }}
+            </div>
+
+            <div class="col order-lg-1 order-2">
+                <div id="map" style="height: 65vh"></div>
+            </div>
+            <div class="col-lg-4 order-lg-2 order-1">
+
+                <div class="mb-3">
+                    <label for="{{ form.departure_datetime.id_for_label }}">{% translate "Departure date" %}</label>
+                    {{ form.departure_datetime }}
+                    {% if form.departure_datetime.errors %}
+                    <span class="text-danger">{{ form.departure_datetime.errors }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="departure">
+                        {% translate "Departure address" %}
+                    </label>
+                    {% if form.d_latitude.errors or form.d_longitude.errors %}
+                    <span class="text-danger">
+                        {% translate "This field is required" %}
+                    </span>
+                    {% endif %}
+                    <select class="form-select" id="departure"></select>
+                </div>
+
+                <div class="mb-2">
+                    <div class="row">
+                        <div class="col mt-auto">
+                            <label clas="mb-0 mt-0">{% translate "Stopovers" %}</label>
+                        </div>
+                        <div class="col text-end my-auto">
+                            <button type="button" class="btn btn-link btn-sm" disabled id="deleteStopoverButton">
+                                {% translate "Delete" %}
+                            </button>
+                            <button type="button" class="btn btn-link btn-sm" id="addStopoverButton">
+                                {% translate "Add" %}
+                            </button>
+                        </div>
+                    </div>
+
+                    {{ formset.management_form }}
+                    <!-- Empty form for formset -->
+                    <div id="empty_form" style="display: none;">
+                        <input type="hidden" name="form-__prefix__-fulltext" id="id_form-__prefix__-fulltext">
+                        <input type="hidden" name="form-__prefix__-street" id="id_form-__prefix__-street">
+                        <input type="hidden" name="form-__prefix__-zipcode" id="id_form-__prefix__-zipcode">
+                        <input type="hidden" name="form-__prefix__-city" id="id_form-__prefix__-city">
+                        <input type="hidden" name="form-__prefix__-latitude" id="id_form-__prefix__-latitude">
+                        <input type="hidden" name="form-__prefix__-longitude" id="id_form-__prefix__-longitude">
+                        <select class="form-select" id="id_form-__prefix__-stopover"></select>
+                    </div>
+                </div>
+
+                <div id="stopover_container">
+
+
+                </div>
+
+
+                <div class="mb-3">
+                    <label for="arrival">{% translate "Arrival address" %}</label>
+                    {% if form.a_latitude.errors or form.a_longitude.errors %}
+                    <span class="text-danger">
+                        {% translate "This field is required" %}
+                    </span>
+                    {% endif %}
+                    <select class="form-select" id="arrival"></select>
+                </div>
+            </div>
         </div>
-
-        <div class="col order-lg-1 order-2">
-            <div id="map" style="height: 65vh"></div>
-        </div>
-        <div class="col-lg-4 order-lg-2 order-1">
-            <div class="alert alert-info" role="alert">
-                In a future version, users will be able to add here intermediate steps to their rides.
+        <button class="btn btn-primary w-100 mt-3" type="submit" disabled id="nextStepButton">
+            <div class="spinner-border spinner-border-sm" role="status" id="loadingSpinner" style="display: none;">
+                <span class="visually-hidden">Loading...</span>
             </div>
-            {{ form.errors }}
-
-            <div class="mb-3">
-                <label for="{{ form.departure_datetime.id_for_label }}">{% translate "Departure date" %}</label>
-                {{ form.departure_datetime }}
-                {% if form.departure_datetime.errors %}
-                <span class="text-danger">{{ form.departure_datetime.errors }}</span>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="departure">
-                    {% translate "Departure address" %}
-                </label>
-                {% if form.d_latitude.errors or form.d_longitude.errors %}
-                <span class="text-danger">
-                    {% translate "This field is required" %}
-                </span>
-                {% endif %}
-                <select class="form-select" id="departure">
-                    <!-- Add options here when user does not use JS -->
-                    <!-- These options are based on previous user inputs or favorites -->
-                </select>
-            </div>
-
-
-
-            <!-- Arrival address autocomplete -->
-            <div class="mb-3">
-                <label for="arrival">{% translate "Arrival address" %}</label>
-                {% if form.a_latitude.errors or form.a_longitude.errors %}
-                <span class="text-danger">
-                    {% translate "This field is required" %}
-                </span>
-                {% endif %}
-                <select class="form-select" id="arrival">
-                    <!-- Add options here when user does not use JS -->
-                    <!-- These options are based on previous user inputs or favorites -->
-                </select>
-            </div>
-        </div>
-    </div>
-    <button class="btn btn-primary w-100 mt-3" type="submit">Étape suivante</button>
+            {% translate "Next step" %}
+        </button>
     </form>
 </div>
 {% endblock content %}
@@ -135,130 +162,66 @@
 </script>
 
 <script>
+    /// ================================================================
+    // Stopover formset handling
+    // =================================================================
     const WAITING_BEFORE_REQUEST = 500; // ms
-
-    const departureEl = document.getElementById("departure");
-    const arrivalEl = document.getElementById("arrival");
-
-    // departure information
-    const hDepartureFullText = document.getElementById("id_d_fulltext");
-    const hDepartureStreet = document.getElementById("id_d_street");
-    const hDepartureZipcode = document.getElementById("id_d_zipcode");
-    const hDepartureCity = document.getElementById("id_d_city");
-    const hDepartureLatitude = document.getElementById("id_d_latitude");
-    const hDepartureLongitude = document.getElementById("id_d_longitude");
-
-    // arrival information
-    const hArrivalFullText = document.getElementById("id_a_fulltext");
-    const hArrivalStreet = document.getElementById("id_a_street");
-    const hArrivalZipcode = document.getElementById("id_a_zipcode");
-    const hArrivalCity = document.getElementById("id_a_city");
-    const hArrivalLatitude = document.getElementById("id_a_latitude");
-    const hArrivalLongitude = document.getElementById("id_a_longitude");
-
-    // routing information
     const hRouteGeometry = document.getElementById("id_r_geometry");
     const hRouteDuration = document.getElementById("id_r_duration");
 
+    const departureEl = document.getElementById("departure");
+    const arrivalEl = document.getElementById("arrival");
+    const nextStepButton = document.getElementById("nextStepButton");
+    const spinner = document.getElementById("loadingSpinner");
 
-    const departure = new Choices(departureEl, {
-        placeholder: true,
-        itemSelectText: "{% translate 'Press to select' %}",
-        placeholderValue: "{% translate 'Search for a precise departure address' %}",
-        noChoicesText: "{% translate 'No address found' %}",
-    });
+    const departure = initializeSearchAddressWidget(departureEl);
+    const arrival = initializeSearchAddressWidget(arrivalEl);
 
-    const arrival = new Choices(arrivalEl, {
-        placeholder: true,
-        itemSelectText: "{% translate 'Press to select' %}",
-        placeholderValue: "{% translate 'Search for a precise arrival address' %}",
-        noChoicesText: "{% translate 'No address found' %}",
-    });
+    // State of the next step button
+    let routeIsBeingFetched = false;
 
-    var departureM, arrivalM, route = null;
+    // Array to hold map markers
+    // First is departure, lasst is arrival and in between are stopovers
+    const markers = [null, null, null, null, null, null, null];
 
-    function updateCoordinates(
-        self,
-        fullTextInput,
-        latitudeInput,
-        longitudeInput,
-        streetInput,
-        zipCodeInput,
-        cityInput,
-        marker,
-    ) {
-        // Get the innerHTML of the first selected option
-        const fullname = self.selectedOptions[0].innerHTML;
-        const [lat, lng] = self.value.split("/");
-        let choiceWidget = undefined;
+    // route = null;
+    var route = null;
 
-        if (marker) {
-            marker.setLatLng([lat, lng]);
+    function getRouteFromCoordinates() {
+        const dMarker = markers[0];
+        const aMarker = markers[markers.length - 1];
+
+        if (!dMarker || !aMarker) {
+            // Both departure and arrival must be defined for fetching the route
+            console.error("Departure or arrival marker is missing");
+            return;
         }
 
-        if (self.id === "departure") {
-            choiceWidget = departure;
+        // Prepare arguments for the API call
+        const start = encodeURIComponent(`${dMarker.getLatLng().lng},${dMarker.getLatLng().lat}`);
+        const end = encodeURIComponent(`${aMarker.getLatLng().lng},${aMarker.getLatLng().lat}`);
 
-            if (!departureM) {
-                // Create a new marker for departure if it doesn't exist
-                departureM = L.marker([lat, lng]).addTo(map);
-            } else {
-                departureM.setLatLng([lat, lng]);
-            }
-        } else if (self.id === "arrival") {
-            choiceWidget = arrival;
-            if (!arrivalM) {
-                // Create a new marker for arrival if it doesn't exist
-                arrivalM = L.marker([lat, lng]).addTo(map);
-            } else {
-                arrivalM.setLatLng([lat, lng]);
+
+        // Gather stopovers (keep only defined markers)    
+        const stopovers = [];
+        for (let i = 1; i < markers.length - 1; i++) {
+            if (markers[i]) {
+                stopovers.push(markers[i].getLatLng());
             }
         }
 
-        // Fill the hidden inputs with the selected address information
-        streetInput.value =
-            choiceWidget.getValue().customProperties.street || "";
-        zipCodeInput.value = choiceWidget.getValue().customProperties.zipcode;
-        cityInput.value = choiceWidget.getValue().customProperties.city;
-        fullTextInput.value = fullname;
-        latitudeInput.value = lat;
-        longitudeInput.value = lng;
-
-        updateMap();
-
-        if (departureM && arrivalM) {
-            // If both markers are set, fetch the route
-            getRouteFromCoordinates(
-                departureM.getLatLng().lat,
-                departureM.getLatLng().lng,
-                arrivalM.getLatLng().lat,
-                arrivalM.getLatLng().lng,
-            );
-        }
-    }
-
-    function updateMap() {
-        // Ensure both markers are defined before calculating bounds
-        // and add a padding to the bounds
-
-        var bounds = L.latLngBounds(
-            departureM ? departureM.getLatLng() : [48.120799, -1.635791],
-            arrivalM ? arrivalM.getLatLng() : [48.120799, -1.635791],
+        const intermediates = stopovers.map(
+            (point) => `${point.lng},${point.lat}`,
         );
 
-        map.fitBounds(bounds, (padding = [50, 50]));
-    }
+        const url = `/api/routing/?start=${start}&end=${end}&intermediates=${intermediates.join("|")}`;
 
-    function getRouteFromCoordinates(
-        departureLat,
-        departureLng,
-        arrivalLat,
-        arrivalLng,
-    ) {
-        const start = encodeURIComponent(`${departureLng},${departureLat}`);
-        const end = encodeURIComponent(`${arrivalLng},${arrivalLat}`);
 
-        const url = `/api/routing/?start=${start}&end=${end}`;
+        // Show spinner and disable next step button
+        spinner.style.display = "inline-block";
+        routeIsBeingFetched = true;
+        nextStepButton.disabled = true;
+
         fetch(url)
             .then((response) => {
                 if (!response.ok) {
@@ -293,140 +256,219 @@
             })
             .catch((error) => {
                 console.error("Error fetching route:", error);
+            })
+            .finally(() => {
+                // Hide spinner and enable next step button
+                spinner.style.display = "none";
+                nextStepButton.disabled = false;
             });
     }
 
-    departureEl.addEventListener("change", function () {
-        updateCoordinates(
-            this,
-            hDepartureFullText,
-            hDepartureLatitude,
-            hDepartureLongitude,
-            hDepartureStreet,
-            hDepartureZipcode,
-            hDepartureCity,
-        );
-    });
-    arrivalEl.addEventListener("change", function () {
-        updateCoordinates(
-            this,
-            hArrivalFullText,
-            hArrivalLatitude,
-            hArrivalLongitude,
-            hArrivalStreet,
-            hArrivalZipcode,
-            hArrivalCity,
-        );
-    });
+    function initializeSearchAddressWidget(el) {
+        // ********************************************************
+        //          INITIALIZE CHOICES.JS WIDGET
+        // ********************************************************
 
-    // =================================================================
-    // Event listeners for addresses search
-    // =================================================================
+        let widget = new Choices(el, {
+            placeholder: true,
+            itemSelectText: "{% translate 'Press to select' %}",
+            placeholderValue: "{% translate 'Search for a precise address' %}",
+            noChoicesText: "{% translate 'No address found' %}",
+        });
 
-    departure.passedElement.element.addEventListener(
-        "search",
-        async (event) => {
-            clearTimeout(event.target.timer);
-
-            event.target.timer = setTimeout(async () => {
-                try {
-                    const response = await fetch(
-                        `/api/completion/?text=${event.detail.value}`,
-                    );
-                    const data = await response.json();
-                    if (data.status !== "OK") {
-                        return;
+        // ********************************************************
+        //          EVENT LISTENERS FOR ADDRESS SEARCH
+        // ********************************************************
+        widget.passedElement.element.addEventListener("search",
+            async (event) => {
+                clearTimeout(event.target.timer);
+                event.target.timer = setTimeout(async () => {
+                    try {
+                        const response = await fetch(
+                            `/api/completion/?text=${event.detail.value}`,
+                        );
+                        const data = await response.json();
+                        if (data.status !== "OK") {
+                            return;
+                        }
+                        widget.clearChoices();
+                        widget.setChoices(
+                            data.results,
+                            "value",
+                            "fulltext",
+                            true,
+                        );
+                    } catch (error) {
+                        console.error("Error fetching addresses:", error);
                     }
-                    departure.clearChoices();
-                    departure.setChoices(
-                        data.results,
-                        "value",
-                        "fulltext",
-                        true,
-                    );
-                } catch (error) {
-                    console.error("Error fetching addresses:", error);
-                }
-            }, WAITING_BEFORE_REQUEST);
-        },
-    );
+                }, WAITING_BEFORE_REQUEST);
+            },
+        );
 
-    arrival.passedElement.element.addEventListener("search", async (event) => {
-        clearTimeout(event.target.timer);
+        // ********************************************************
+        //          EVENT LISTENERS FOR ADDRESS SELECTION
+        // ********************************************************
+        el.addEventListener("change", function () {
+            // Get associated hidden inputs based on the select element's ID
+            // If the ID starts with "id_form-", it's a stopover
+            // Otherwise, it's either "departure" or "arrival"
+            const prefix = this.id.startsWith("id_form-")
+                ? this.id.replace("id_", "").replace("-stopover", "")
+                : this.id === "departure"
+                    ? "departure"
+                    : "arrival";
 
-        event.target.timer = setTimeout(async () => {
-            try {
-                const response = await fetch(
-                    `/api/completion/?text=${event.detail.value}`,
-                );
-                const data = await response.json();
-                if (data.status !== "OK") {
-                    return;
+            const hiddenFullText = document.getElementById(`id_${prefix}-fulltext`);
+            const hiddenStreet = document.getElementById(`id_${prefix}-street`);
+            const hiddenZipcode = document.getElementById(`id_${prefix}-zipcode`);
+            const hiddenCity = document.getElementById(`id_${prefix}-city`);
+            const hiddenLatitude = document.getElementById(`id_${prefix}-latitude`);
+            const hiddenLongitude = document.getElementById(`id_${prefix}-longitude`);
+
+            // Get the lat/lng from the selected value
+            const [lat, lng] = this.value.split("/");
+
+            if (this.id === "departure") {
+                // The first marker is departure
+                if (!markers[0]) {
+                    // The marker doesn't exist yet, create it
+                    let marker = L.marker([lat, lng]).addTo(map);
+                    markers[0] = marker;
+                } else {
+                    // The marker already exists, just update its position
+                    markers[0].setLatLng([lat, lng]);
                 }
-                arrival.clearChoices();
-                arrival.setChoices(data.results, "value", "fulltext", true);
-            } catch (error) {
-                console.error("Error fetching addresses:", error);
             }
-        }, WAITING_BEFORE_REQUEST);
+
+            if (this.id === "arrival") {
+                // The last marker is arrival
+                if (!markers[markers.length - 1]) {
+                    // The marker doesn't exist yet, create it
+                    let marker = L.marker([lat, lng]).addTo(map);
+                    markers[markers.length - 1] = marker;
+                } else {
+                    // The marker already exists, just update its position
+                    markers[markers.length - 1].setLatLng([lat, lng]);
+                }
+
+            }
+
+            // for stopovers, insert markers in between departure and arrival
+            if (this.id.startsWith("id_form-")) {
+                const index = parseInt(this.id.split("-")[1]);
+
+                if (!markers[index + 1]) {
+                    // The marker doesn't exist yet, create it
+                    let marker = L.marker([lat, lng]).addTo(map);
+                    markers[index + 1] = marker;
+                } else {
+                    // The marker already exists, just update its position
+                    markers[index + 1].setLatLng([lat, lng]);
+                }
+            }
+
+            // fit bound to all markers
+            var bounds = L.latLngBounds([]);
+            markers.forEach((marker) => {
+                if (marker) {
+                    bounds.extend(marker.getLatLng());
+                }
+            });
+            map.fitBounds(bounds, { padding: [50, 50] });
+
+            // Fetch route if both departure and arrival are set
+            if (markers[0] && markers[markers.length - 1]) {
+                getRouteFromCoordinates();
+                if (!routeIsBeingFetched) {
+                    // don't forget to enable the next step button if there is no route loading
+                    nextStepButton.disabled = false;
+                }
+                
+            }
+        })
+
+
+        return widget;
+    }
+
+
+    const addFormBtn = document.getElementById("addStopoverButton");
+    const deleteFormBtn = document.getElementById("deleteStopoverButton");
+
+    const maximumFormCount = document.getElementById("id_form-MAX_NUM_FORMS");
+    const currentFormCount = document.getElementById("id_form-TOTAL_FORMS");
+
+    addFormBtn.addEventListener("click", function () {
+
+        if (currentFormCount.value >= maximumFormCount.value) {
+            // Reached maximum number of stopovers
+            console.debug("Maximum number of stopovers reached");
+            return;
+        }
+
+        const emptyForm = document.getElementById("empty_form").innerHTML;
+        currentFormCount.value = parseInt(currentFormCount.value) + 1;
+        let newFormHtml = emptyForm.replace(/__prefix__/g, currentFormCount.value - 1);
+
+        const stopoverContainer = document.getElementById("stopover_container");
+        const newFormDiv = document.createElement("div");
+        newFormDiv.classList.add("mb-1");
+        newFormDiv.innerHTML = newFormHtml;
+        stopoverContainer.appendChild(newFormDiv);
+
+        const stopoverSelect = newFormDiv.querySelector(
+            `#id_form-${currentFormCount.value - 1}-stopover`,
+        );
+
+        // Initialize Choices.js widget for the new stopover select
+        const stopoverWidget = initializeSearchAddressWidget(stopoverSelect);
+
+        if (currentFormCount.value >= maximumFormCount.value) {
+            addFormBtn.disabled = true;
+        }
+
+        if (currentFormCount.value > 0) {
+            deleteFormBtn.disabled = false;
+        }
     });
 
-    // =================================================================
-    // Initial map setup
-    // =================================================================
-
-    document.addEventListener("DOMContentLoaded", function () {
-        if (
-            hDepartureLatitude.value &&
-            hDepartureLongitude.value &&
-            departureM === undefined
-        ) {
-            // If departure coordinates are set, create the marker
-            const lat = parseFloat(hDepartureLatitude.value);
-            const lng = parseFloat(hDepartureLongitude.value);
-            departureM = L.marker([lat, lng]).addTo(map);
-            updateMap();
-        }
-        // FIXME: if hArrivalLatitude and hArrivalLongitude are undefined
-        if (
-            hArrivalLatitude.value &&
-            hArrivalLongitude.value &&
-            arrivalM === undefined
-        ) {
-            // If arrival coordinates are set, create the marker
-            const lat = parseFloat(hArrivalLatitude.value);
-            const lng = parseFloat(hArrivalLongitude.value);
-            arrivalM = L.marker([lat, lng]).addTo(map);
-            updateMap();
+    deleteFormBtn.addEventListener("click", function () {
+        if (currentFormCount.value <= 0) {
+            // No stopover to delete
+            console.debug("No stopover to delete");
+            return;
         }
 
-        if (hRouteGeometry.value) {
-            // If route is set, display it on the map
-            const routeData = JSON.parse(hRouteGeometry.value);
-            route = L.geoJSON(routeData, {
-                style: {
-                    color: "#3388ff",
-                    weight: 5,
-                    opacity: 0.7,
-                },
-            }).addTo(map);
-            map.fitBounds(route.getBounds(), { padding: [50, 50] });
+        const stopoverContainer = document.getElementById("stopover_container");
+        stopoverContainer.removeChild(stopoverContainer.lastElementChild);
+        currentFormCount.value = parseInt(currentFormCount.value) - 1;
+
+        if (currentFormCount.value < maximumFormCount.value) {
+            addFormBtn.disabled = false;
+        }
+        console.debug("formset: (" + currentFormCount.value + '/' + maximumFormCount.value + ')');
+
+        if (currentFormCount.value == 0) {
+            deleteFormBtn.disabled = true;
         }
 
-        // Update value of Choices when already set in hidden inputs
-        if (hDepartureFullText.value) {
-            departure.setValue([
-                `${hDepartureLatitude.value}/${hDepartureLongitude.value}`,
-                hDepartureFullText.value,
-            ]);
+        // Remove the corresponding marker from the map
+        const markerIndex = parseInt(currentFormCount.value) + 1; // +1
+        if (markers[markerIndex]) {
+            map.removeLayer(markers[markerIndex]);
+            markers[markerIndex] = null;
         }
 
-        if (hArrivalFullText.value) {
-            arrival.setValue([
-                `${hArrivalLatitude.value}/${hArrivalLongitude.value}`,
-                hArrivalFullText.value,
-            ]);
+        // Fetch route if both departure and arrival are set
+        if (markers[0] && markers[markers.length - 1]) {
+            getRouteFromCoordinates();
         }
     });
+</script>
+
+<script>
+    // On page load populate existing stopovers if any (from formset)
+    // and initialize Choices.js widgets for them
+    // show the route
 </script>
 {% endblock extrascript %}
