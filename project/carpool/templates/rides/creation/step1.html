@@ -54,7 +54,7 @@
 
     <form action="" method="post">
         {% csrf_token %}
-        <h1>Publication d'un trajet</h1>
+        <h1>{% translate "Publish a ride" %}</h1>
         {% include 'rides/creation/progress.html' with value=25 %}
 
         <div class="row">

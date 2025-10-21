@@ -10,7 +10,7 @@
 <div class="container mt-3">
     <form action="" method="post">
         {% csrf_token %}
-        <h1>Publication d'un trajet</h1>
+        <h1>{% translate "Publish a ride" %}</h1>
         {% include 'rides/creation/progress.html' with value=50 %}
         <div class="row">
             <div class="col-lg-8 order-lg-1 order-2" style="height: 65vh;">
@@ -21,11 +21,11 @@
             <div class="col-lg-4 order-lg-2 order-1">
                 <div class="card mb-3">
                     <div class="card-body">Publication en cours d'un trajet de
-                        <b>{{ step1_data.d_city }}</b> to <b>{{ step1_data.a_city }}</b> 
+                        <b>{{ step1_data.departure.city }}</b> to <b>{{ step1_data.arrival.city }}</b>
                         (le <b>{{ departure_datetime }}</b>)
                     </div>
                 </div>
-                
+
                 <!-- Other fields -->
                 <div class="mb-3">
                     <label for="{{ form.seats.id_for_label }}">{% translate "Seats offering" %}</label>
@@ -177,6 +177,8 @@
 
 {% block extrascript %}
 {{ step1_data|json_script:"step1_data" }}
+{{ stepover_data|json_script:"stepover_data" }}
+
 
 
 
@@ -212,8 +214,12 @@
         document.getElementById("step1_data").textContent,
     );
 
-    console.debug("Step 1 data:", step1_data);
+    const stepover_data = JSON.parse(
+        document.getElementById("stepover_data").textContent,
+    );
 
+    console.debug("Step 1 data:", step1_data);
+    console.debug("Stepover data:", stepover_data);
 
     function updateMap() {
         // Ensure both markers are defined before calculating bounds
@@ -231,26 +237,41 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         if (
-            step1_data.d_latitude &&
-            step1_data.d_longitude &&
+            step1_data.departure.latitude &&
+            step1_data.departure.longitude &&
             departureM === undefined
         ) {
             // If departure coordinates are set, create the marker
-            const lat = step1_data.d_latitude;
-            const lng = step1_data.d_longitude;
+            const lat = step1_data.departure.latitude;
+            const lng = step1_data.departure.longitude;
             departureM = L.marker([lat, lng]).addTo(map);
             updateMap();
         }
         // FIXME: if hArrivalLatitude and hArrivalLongitude are undefined
         if (
-            step1_data.a_latitude &&
-            step1_data.a_longitude &&
+            step1_data.arrival.latitude &&
+            step1_data.arrival.longitude &&
             arrivalM === undefined
         ) {
             // If arrival coordinates are set, create the marker
-            const lat = step1_data.a_latitude;
-            const lng = step1_data.a_longitude;
+            const lat = step1_data.arrival.latitude;
+            const lng = step1_data.arrival.longitude;
             arrivalM = L.marker([lat, lng]).addTo(map);
+            updateMap();
+        }
+
+        // handle stepover markers
+        if (stepover_data && stepover_data.length > 0) {
+            stepover_data.forEach(function (stopover) {
+                if (
+                    stopover.latitude &&
+                    stopover.longitude
+                ) {
+                    const lat = stopover.latitude;
+                    const lng = stopover.longitude;
+                    L.marker([lat, lng]).addTo(map);
+                }
+            });
             updateMap();
         }
 
@@ -266,7 +287,7 @@
             }).addTo(map);
             map.fitBounds(route.getBounds(), { padding: [50, 50] });
         }
-        
+
         // TODO: fix this stuff
         // Update value of Choices when already set in hidden inputs
         // if (hDepartureFullText.value) {
@@ -287,7 +308,7 @@
     // Automated enabling/disabling of payment method checkboxes
     // =================================================================
     document.addEventListener("DOMContentLoaded", function () {
-        const priceInput = document.getElementById("id_price_per_seat");
+        const priceInput = document.getElementById("id_price");
         const paymentCheckboxes = document.querySelectorAll(
             '#payment-options input[type="checkbox"]',
         );

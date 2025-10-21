@@ -196,8 +196,15 @@ def rides_detail(request, pk):
     chat_request = ChatRequest.objects.filter(user=request.user, ride__pk=pk).first()
 
     ride = get_object_or_404(Ride, pk=pk)
+    steps = ride.steps.order_by("order")
+
+    steps_json = [
+        {"lat": step.location.lat, "lng": step.location.lng} for step in steps
+    ]
+
     context = {
         "ride": ride,
+        "steps_json": steps_json,
         "geometry": ride.geometry.geojson,
         "reservation": reservation,
         "chat_request": chat_request,

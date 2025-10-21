@@ -45,6 +45,8 @@
     <input type="hidden" name="" id="id_a_longitude" value="{{ ride.end_loc.lng|stringformat:" g" }}">
     <input type="hidden" name="" id="id_r_geometry" value="{{ geometry|default_if_none:"" }}">
 
+    {{ steps_json|json_script:"steps-data" }}
+
     <div class="d-flex justify-content-between mb-2">
         <h1>{{ ride.start_dt|date:"l j F Y" }}</h1>
         <div class="my-auto">
@@ -58,7 +60,7 @@
             <a href="{% url 'carpool:delete' ride.pk %}" class="btn btn-outline-danger">{% translate "Delete" %}</a>
             {% endif %}
         </div>
-        
+
 
     </div>
     <div class="row">
@@ -162,16 +164,16 @@
                 </div>
             </div>
             {% if not ride.driver == user %}
-                {% if not chat_request %}
-                <form action="{% url 'carpool:chat' ride.pk %}" method="post">
-                    {% csrf_token %}
-                    <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
-                </form>
-                {% else %}
-                <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">
-                    {% translate "See the discussion" %}
-                </a>
-                {% endif %}
+            {% if not chat_request %}
+            <form action="{% url 'carpool:chat' ride.pk %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
+            </form>
+            {% else %}
+            <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">
+                {% translate "See the discussion" %}
+            </a>
+            {% endif %}
             {% endif %}
         </div>
 
@@ -199,18 +201,20 @@
         const arrivalLat = parseFloat(document.getElementById('id_a_latitude').value);
         const arrivalLng = parseFloat(document.getElementById('id_a_longitude').value);
         const r_geometry = document.getElementById('id_r_geometry').value;
-
-        const map = L.map('ride-map',
-            {
-
-            })
+        const steps_json = JSON.parse(document.getElementById('steps-data').textContent);
+        console.debug(steps_json);
+        const map = L.map('ride-map', {})
 
         L.marker([departureLat, departureLng]).addTo(map)
         L.marker([arrivalLat, arrivalLng]).addTo(map)
 
+        steps_json.forEach(step => {
+            L.marker([step.lat, step.lng]).addTo(map)
+        });
+
         map.fitBounds([
             [departureLat, departureLng],
-            [arrivalLat, arrivalLng]
+            [arrivalLat, arrivalLng],
         ], {
             padding: [50, 50]
         });
