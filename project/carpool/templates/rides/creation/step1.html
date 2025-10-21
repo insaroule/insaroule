@@ -33,6 +33,18 @@
 
 {% block content %}
 <div class="container my-3">
+    <!-- Empty form for formset -->
+    <div id="empty_form" style="display: none;">
+        <input type="hidden" name="form-__prefix__-fulltext" id="id_form-__prefix__-fulltext">
+        <input type="hidden" name="form-__prefix__-street" id="id_form-__prefix__-street">
+        <input type="hidden" name="form-__prefix__-zipcode" id="id_form-__prefix__-zipcode">
+        <input type="hidden" name="form-__prefix__-city" id="id_form-__prefix__-city">
+        <input type="hidden" name="form-__prefix__-latitude" id="id_form-__prefix__-latitude">
+        <input type="hidden" name="form-__prefix__-longitude" id="id_form-__prefix__-longitude">
+        <select class="form-select" id="id_form-__prefix__-stopover"></select>
+    </div>
+
+
     <form action="" method="post">
         {% csrf_token %}
         <h1>Publication d'un trajet</h1>
@@ -98,20 +110,9 @@
                             </button>
                         </div>
                     </div>
-
-                    {{ formset.management_form }}
-                    <!-- Empty form for formset -->
-                    <div id="empty_form" style="display: none;">
-                        <input type="hidden" name="form-__prefix__-fulltext" id="id_form-__prefix__-fulltext">
-                        <input type="hidden" name="form-__prefix__-street" id="id_form-__prefix__-street">
-                        <input type="hidden" name="form-__prefix__-zipcode" id="id_form-__prefix__-zipcode">
-                        <input type="hidden" name="form-__prefix__-city" id="id_form-__prefix__-city">
-                        <input type="hidden" name="form-__prefix__-latitude" id="id_form-__prefix__-latitude">
-                        <input type="hidden" name="form-__prefix__-longitude" id="id_form-__prefix__-longitude">
-                        <select class="form-select" id="id_form-__prefix__-stopover"></select>
-                    </div>
                 </div>
-
+                
+                {{ formset.management_form }}
                 <div id="stopover_container">
 
 
@@ -325,8 +326,17 @@
             const hiddenLatitude = document.getElementById(`id_${prefix}-latitude`);
             const hiddenLongitude = document.getElementById(`id_${prefix}-longitude`);
 
-            // Get the lat/lng from the selected value
+            // Get the lat/lng from the selected value and the fullname
             const [lat, lng] = this.value.split("/");
+            const fullname = this.selectedOptions[0].innerHTML;
+        
+            // Populate hidden inputs with selected address details
+            hiddenFullText.value = fullname;
+            hiddenStreet.value = widget.getValue().customProperties.street || "";
+            hiddenZipcode.value = widget.getValue().customProperties.zipcode;
+            hiddenCity.value = widget.getValue().customProperties.city;
+            hiddenLatitude.value = lat;
+            hiddenLongitude.value = lng;
 
             if (this.id === "departure") {
                 // The first marker is departure
@@ -470,5 +480,16 @@
     // On page load populate existing stopovers if any (from formset)
     // and initialize Choices.js widgets for them
     // show the route
+    // document.addEventListener("DOMContentLoaded", function () {
+    //     for (let i = 0; i < parseInt(document.getElementById("id_form-TOTAL_FORMS").value); i++) {
+    //         const stopoverSelect = document.getElementById(`id_form-${i}-stopover`);
+    //         initializeSearchAddressWidget(stopoverSelect);
+
+    //         // Trigger change event to add markers for existing stopovers
+    //         const event = new Event("change");
+    //         stopoverSelect.dispatchEvent(event);
+    //     }
+        
+    // });
 </script>
 {% endblock extrascript %}
