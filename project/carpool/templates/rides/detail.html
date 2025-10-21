@@ -202,7 +202,6 @@
         const arrivalLng = parseFloat(document.getElementById('id_a_longitude').value);
         const r_geometry = document.getElementById('id_r_geometry').value;
         const steps_json = JSON.parse(document.getElementById('steps-data').textContent);
-        console.debug(steps_json);
         const map = L.map('ride-map', {})
 
         L.marker([departureLat, departureLng]).addTo(map)
