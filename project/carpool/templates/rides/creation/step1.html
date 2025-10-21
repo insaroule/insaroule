@@ -21,13 +21,20 @@
 
     }
 
-    #departure {
+    .choices__inner {
+        z-index: 997;
+    }
+
+
+    .choices > .choices_list {
         z-index: 999;
     }
 
-    #arrival {
-        z-index: 998;
+    #map {
+        z-index: 0;
     }
+
+    /* Select the  */
 </style>
 {% endblock extrahead %}
 
@@ -111,11 +118,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 {{ formset.management_form }}
                 <div id="stopover_container">
-
-
+                    {% for stopover_form in formset %}
+                        {{ form }}
+                    {% endfor %}
                 </div>
 
 
@@ -183,7 +191,7 @@
 
     // Array to hold map markers
     // First is departure, lasst is arrival and in between are stopovers
-    const markers = [null, null, null, null, null, null, null];
+    let markers = [null, null, null, null, null, null, null];
 
     // route = null;
     var route = null;
@@ -329,7 +337,7 @@
             // Get the lat/lng from the selected value and the fullname
             const [lat, lng] = this.value.split("/");
             const fullname = this.selectedOptions[0].innerHTML;
-        
+
             // Populate hidden inputs with selected address details
             hiddenFullText.value = fullname;
             hiddenStreet.value = widget.getValue().customProperties.street || "";
@@ -393,7 +401,7 @@
                     // don't forget to enable the next step button if there is no route loading
                     nextStepButton.disabled = false;
                 }
-                
+
             }
         })
 
@@ -477,19 +485,61 @@
 </script>
 
 <script>
-    // On page load populate existing stopovers if any (from formset)
-    // and initialize Choices.js widgets for them
-    // show the route
-    // document.addEventListener("DOMContentLoaded", function () {
-    //     for (let i = 0; i < parseInt(document.getElementById("id_form-TOTAL_FORMS").value); i++) {
-    //         const stopoverSelect = document.getElementById(`id_form-${i}-stopover`);
-    //         initializeSearchAddressWidget(stopoverSelect);
 
-    //         // Trigger change event to add markers for existing stopovers
-    //         const event = new Event("change");
-    //         stopoverSelect.dispatchEvent(event);
-    //     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        markers = [null, null, null, null, null, null, null];
+        const dLat = document.getElementById("id_departure-latitude");
+        const dLng = document.getElementById("id_departure-longitude");
+        const dFtx = document.getElementById("id_departure-fulltext");
+        const aLat = document.getElementById("id_arrival-latitude");
+        const aLng = document.getElementById("id_arrival-longitude");
+        const aFtx = document.getElementById("id_arrival-fulltext");
+        // Add existing departure marker if any
+        if (dLat.value && dLng.value && dFtx.value) {
+            let marker = L.marker([dLat.value, dLng.value]).addTo(map);
+            markers[0] = marker;
+            departure.setValue([dFtx.value]);
+        }
+
+        // Add existing arrival marker if any
+        if (aLat && aLng && aFtx) {
+            let marker = L.marker([aLat.value, aLng.value]).addTo(map);
+            markers[markers.length - 1] = marker;
+            arrival.setValue([aFtx.value]);
+        }
+
+        // TODO: handle stopovers
         
-    // });
+        // const totalForms = document.getElementById("id_form-TOTAL_FORMS").value;
+        // console.log("Total stopover forms:", totalForms);
+        // for (let i = 0; i < totalForms; i++) {
+        //     const sLat = document.getElementById(`id_form-${i}-latitude`);
+        //     const sLng = document.getElementById(`id_form-${i}-longitude`);
+        //     const sFtx = document.getElementById(`id_form-${i}-fulltext`);
+        //     if (sLat && sLng && sFtx && sLat.value && sLng.value && sFtx.value) {
+        //         let marker = L.marker([sLat.value, sLng.value]).addTo(map);
+        //         markers[i + 1] = marker; // +1 because first marker is departure
+        //         const stopoverSelect = document.getElementById(`id_form-${i}-stopover`);
+        //         const stopoverWidget = initializeSearchAddressWidget(stopoverSelect);
+        //         stopoverWidget.setValue([sFtx.value]);
+        //     }
+        // }
+
+
+        // Add existing route geometry if any
+        if (hRouteGeometry.value) {
+            const routeData = JSON.parse(hRouteGeometry.value);
+            route = L.geoJSON(routeData, {
+                style: {
+                    color: "#3388ff",
+                    weight: 5,
+                    opacity: 0.7,
+                },
+            }).addTo(map);
+            map.fitBounds(route.getBounds(), { padding: [50, 50] });
+        }
+
+    });
 </script>
 {% endblock extrascript %}

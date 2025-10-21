@@ -6,26 +6,42 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.timezone import timedelta, datetime
 
-from carpool.forms import CreateRideStep1Form, CreateRideStep2Form
+from carpool.forms import CreateRideStep1Form, CreateRideStep2Form, StopOverFormSet
 from carpool.models import Location
 from carpool.models.ride import Ride
 
 
 @login_required
 def create_step1(request):
-    form = CreateRideStep1Form(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        cleaned = form.cleaned_data.copy()
+    form = CreateRideStep1Form()
+    formset = StopOverFormSet()
 
-        # Convert datetime to string
-        if "departure_datetime" in cleaned:
-            cleaned["departure_datetime"] = cleaned["departure_datetime"].isoformat()
+    if request.method == "POST":
+        print(request.POST)
+        form = CreateRideStep1Form(request.POST)
+        formset = StopOverFormSet(request.POST)
 
-        request.session["ride_step1"] = cleaned
-        request.session.modified = True
-        return redirect("carpool:create_step2")
+        if form.is_valid() and formset.is_valid():
+            # Store form data in session
+            cleaned = form.cleaned_data.copy()
 
-    return render(request, "rides/creation/step1.html", {"form": form})
+            # Convert datetime to string
+            if "departure_datetime" in cleaned:
+                cleaned["departure_datetime"] = cleaned[
+                    "departure_datetime"
+                ].isoformat()
+
+            # TODO: store formset data in session as well
+
+            request.session["ride_step1"] = cleaned
+            request.session.modified = True
+            return redirect("carpool:create_step2")
+
+    context = {
+        "form": form,
+        "formset": formset,
+    }
+    return render(request, "rides/creation/step1.html", context)
 
 
 @login_required
