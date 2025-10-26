@@ -404,8 +404,6 @@
 
             }
         })
-
-
         return widget;
     }
 
@@ -503,7 +501,7 @@
         }
 
         // Add existing arrival marker if any
-        if (aLat && aLng && aFtx) {
+        if (aLat.value && aLng.value && aFtx.value) {
             let marker = L.marker([aLat.value, aLng.value]).addTo(map);
             markers[markers.length - 1] = marker;
             arrival.setValue([aFtx.value]);
@@ -539,7 +537,6 @@
             }).addTo(map);
             map.fitBounds(route.getBounds(), { padding: [50, 50] });
         }
-
     });
 </script>
 {% endblock extrascript %}
