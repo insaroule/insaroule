@@ -26,8 +26,11 @@ async def routing(request) -> JsonResponse:
     """
     start = request.GET.get("start", "")
     end = request.GET.get("end", "")
+    intermediates = request.GET.getlist("intermediates", [])
+    print(intermediates)
+
     if not start or not end:
         return JsonResponse({"status": "NOK"}, status=400)
-    task = get_routing.delay(start, end)
+    task = get_routing.delay(start, end, intermediates)
     res = await sync_to_async(task.get)(timeout=5)  # blocking I/O offloaded
     return JsonResponse(res, safe=False)

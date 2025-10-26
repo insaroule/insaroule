@@ -74,23 +74,28 @@ def get_autocompletion(query):
 
 
 @shared_task(rate_limit=settings.ROUTING_TASK_RATE_LIMIT)
-def get_routing(start, end):
+def get_routing(start, end, intermediates):
     """
     Celery task to get routing information between two points using the IGN routing API.
 
     Args:
         start (str): Starting point coordinates, format "lon,lat" (e.g. "-1.68365,48.110899")
         end (str): Ending point coordinates, format "lon,lat" (e.g. "-1.466824,47.297116")
+        intermediates (list, optional): List of intermediate point coordinates, format ["lon,lat", ...]. Defaults to None.
 
     Returns:
         dict: Routing result (JSON) or error information.
     """
 
     base_url = "https://data.geopf.fr/navigation/itineraire"
+    logger.error(f"[IGN Routing] Requesting route from {start} to {end}")
+    logger.error(f"[IGN Routing] Intermediates: {intermediates}")
+
     params = {
         "resource": "bdtopo-osrm",
         "start": start,
         "end": end,
+        "intermediates": "|".join(intermediates) if intermediates else None,
         "profile": "car",
         "optimization": "fastest",
         "geometryFormat": "geojson",
@@ -110,6 +115,7 @@ def get_routing(start, end):
         try:
             start_time = time.time()
             response = requests.get(base_url, params=params, timeout=TIMEOUT)
+
             duration = round(time.time() - start_time, 2)
 
             logger.info(

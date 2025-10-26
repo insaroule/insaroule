@@ -4,11 +4,11 @@
         <div class="d-flex justify-content-between">
             <span>{{ ride.start_dt|date:"l j F Y" }}</span>
             {% if status %}
-                {% if status == "ACCEPTED" %}
-                <span class="badge text-bg-success my-auto">{% translate "Accepted" %}</span>
-                {% else %}
-                <span class="badge text-bg-secondary my-auto">{% translate "Pending" %}</span>
-                {% endif %}
+            {% if status == "ACCEPTED" %}
+            <span class="badge text-bg-success my-auto">{% translate "Accepted" %}</span>
+            {% else %}
+            <span class="badge text-bg-secondary my-auto">{% translate "Pending" %}</span>
+            {% endif %}
             {% endif %}
         </div>
     </div>
@@ -24,13 +24,27 @@
                     </div>
                     <div class="d-flex flex-column mx-1 my-1">
                         <div class="circle"></div>
+                        {% if ride.steps %}
+                        <div class="line"></div>
+                        <div class="circle"></div>
+                        {% endif %}
                         <div class="line"></div>
                         <div class="circle"></div>
                     </div>
                     <div class="d-flex flex-column ms-2">
-                        <span>{{ ride.start_loc.city }}</span>
+                        <span class="mb-auto">{{ ride.start_loc.city }}</span>
+                        {% if ride.steps %}
+                        <span class="my-auto fst-italic">
+                            {% blocktranslate trimmed count ride_count=ride.steps.count %}
+                                And {{ ride_count }} other step
+                                {% plural %}
+                                And {{ ride_count }} other steps
+                            {% endblocktranslate %}
+                        </span>
+                        {% else %}
                         <span class="h-100"></span>
-                        <span>{{ ride.end_loc.city }}</span>
+                        {% endif %}
+                        <span class="mt-auto">{{ ride.end_loc.city }}</span>
                     </div>
                 </div>
             </div>

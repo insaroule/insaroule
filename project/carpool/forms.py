@@ -1,4 +1,5 @@
 import datetime
+# import logging
 
 from django import forms
 from django.utils import timezone
@@ -10,31 +11,30 @@ from carpool.models import Vehicle
 
 
 MAXIMUM_SEATS_IN_VEHICLE = 8
+MAXIMUM_STEPOVERS_IN_RIDE = 5
+
+
+class LocationForm(forms.Form):
+    """Form to capture location details."""
+
+    fulltext = forms.CharField(widget=forms.HiddenInput(), required=True)
+    street = forms.CharField(widget=forms.HiddenInput(), required=False)
+    zipcode = forms.CharField(widget=forms.HiddenInput(), required=True)
+    city = forms.CharField(widget=forms.HiddenInput(), required=True)
+    latitude = forms.FloatField(widget=forms.HiddenInput(), required=True)
+    longitude = forms.FloatField(widget=forms.HiddenInput(), required=True)
+
+
+# Formset to handle multiple stopovers locations in a ride
+StopOverFormSet = forms.formset_factory(
+    LocationForm,
+    min_num=0,
+    extra=0,
+    max_num=MAXIMUM_STEPOVERS_IN_RIDE,
+)
 
 
 class CreateRideStep1Form(forms.Form):
-    # Departure information
-    d_fulltext = forms.CharField(required=True, widget=forms.HiddenInput())
-    d_street = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput(),
-    )  # Not necessary a street (could be a city)
-    d_zipcode = forms.CharField(required=True, widget=forms.HiddenInput())
-    d_city = forms.CharField(required=True, widget=forms.HiddenInput())
-    d_latitude = forms.FloatField(required=True, widget=forms.HiddenInput())
-    d_longitude = forms.FloatField(required=True, widget=forms.HiddenInput())
-
-    # Arrival information
-    a_fulltext = forms.CharField(required=True, widget=forms.HiddenInput())
-    a_street = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput(),
-    )  # Not necessary a street (could be a city)
-    a_zipcode = forms.CharField(required=True, widget=forms.HiddenInput())
-    a_city = forms.CharField(required=True, widget=forms.HiddenInput())
-    a_latitude = forms.FloatField(required=True, widget=forms.HiddenInput())
-    a_longitude = forms.FloatField(required=True, widget=forms.HiddenInput())
-
     # Routing information
     r_geometry = forms.CharField(required=True, widget=forms.HiddenInput())
     r_duration = forms.FloatField(required=True, widget=forms.HiddenInput())
@@ -50,15 +50,29 @@ class CreateRideStep1Form(forms.Form):
         ),
     )
 
-    def clean(self):
-        cleaned_data = super().clean()
-        # Prevent creating a ride where departure and arrival are identical
-        d_lat = cleaned_data.get("d_latitude")
-        d_lng = cleaned_data.get("d_longitude")
-        a_lat = cleaned_data.get("a_latitude")
-        a_lng = cleaned_data.get("a_longitude")
+    def is_valid(self):
+        valid = super().is_valid()
+        departure_valid = self.departure.is_valid()
+        arrival_valid = self.arrival.is_valid()
+        return valid and departure_valid and arrival_valid
 
-        # Use a small tolerance for float comparisons
+    def clean(self):
+        print("clean called on CreateRideStep1Form")
+        cleaned_data = super().clean()
+        print("Cleaned data:", cleaned_data)
+
+        if not (hasattr(self, "departure") and self.departure.is_valid()):
+            return cleaned_data
+        if not (hasattr(self, "arrival") and self.arrival.is_valid()):
+            return cleaned_data
+
+        # Prevent creating a ride where departure and arrival are identical
+        d_data = self.departure.cleaned_data
+        a_data = self.arrival.cleaned_data
+
+        d_lat, d_lng = d_data.get("latitude"), d_data.get("longitude")
+        a_lat, a_lng = a_data.get("latitude"), a_data.get("longitude")
+
         if (
             d_lat is not None
             and a_lat is not None
@@ -68,12 +82,23 @@ class CreateRideStep1Form(forms.Form):
             and abs(d_lng - a_lng) < 1e-5
         ):
             self.add_error(
-                "a_fulltext",
+                None,
                 _("Departure and arrival locations cannot be the same."),
             )
 
+        return cleaned_data
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Departure and arrival information
+        if self.data:
+            self.departure = LocationForm(self.data, prefix="departure")
+            self.arrival = LocationForm(self.data, prefix="arrival")
+        else:
+            self.departure = LocationForm(prefix="departure")
+            self.arrival = LocationForm(prefix="arrival")
+
         for field_name, field in self.fields.items():
             widget = field.widget
             css_class = widget.attrs.get("class", "")
@@ -81,6 +106,7 @@ class CreateRideStep1Form(forms.Form):
                 widget.attrs["class"] = f"{css_class} is-invalid"
             else:
                 widget.attrs.setdefault("class", "form-control")
+
         now = timezone.now().strftime("%Y-%m-%dT%H:%M")
         self.fields["departure_datetime"].widget.attrs["min"] = now
 

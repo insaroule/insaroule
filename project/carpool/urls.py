@@ -34,7 +34,6 @@ urlpatterns = [
 urlpatterns += [
     path("create/step1/", rides_views.create_step1, name="create_step1"),
     path("create/step2/", rides_views.create_step2, name="create_step2"),
-    path("create/step3/", rides_views.create_step3, name="create_step3"),
 ]
 
 

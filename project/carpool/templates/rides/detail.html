@@ -1,164 +1,183 @@
-    {% extends 'base.html' %}
-    {% load duration %}
-    {% load static %}
-    {% load i18n %}
+{% extends 'base.html' %}
+{% load duration %}
+{% load static %}
+{% load i18n %}
 
 
-    {% block extrahead %}
-    <link rel="stylesheet" href="{% static 'vendors/leaflet/leaflet.css' %}"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <style>
-        #departure {
-            z-index: 999;
-        }
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'vendors/leaflet/leaflet.css' %}"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    #departure {
+        z-index: 999;
+    }
 
-        #arrival {
-            z-index: 998;
-        }
+    #arrival {
+        z-index: 998;
+    }
 
-        .circle {
-            width: 10px;
-            height: 10px;
-            border: 2px solid black;
-            border-radius: 50%;
-            background-color: white;
-            align-self: center;
-            flex-shrink: 0;
-        }
+    .circle {
+        width: 10px;
+        height: 10px;
+        border: 2px solid black;
+        border-radius: 50%;
+        background-color: white;
+        align-self: center;
+        flex-shrink: 0;
+    }
 
-        .line {
-            background-color: #1b1b1b;
-            flex: 1;
-            border-radius: 2px;
-            align-self: center;
-            margin: 2px 0;
-            width: 4px;
-        }
-    </style>
-    {% endblock extrahead %}
+    .line {
+        background-color: #1b1b1b;
+        flex: 1;
+        border-radius: 2px;
+        align-self: center;
+        margin: 2px 0;
+        width: 4px;
+    }
+</style>
+{% endblock extrahead %}
 
-    {% block content %}
-    <div class="container mt-3">
-        <input type="hidden" name="" id="id_d_latitude" value="{{ ride.start_loc.lat|stringformat:"g" }}">
-        <input type="hidden" name="" id="id_d_longitude" value="{{ ride.start_loc.lng|stringformat:"g" }}">
-        <input type="hidden" name="" id="id_a_latitude" value="{{ ride.end_loc.lat|stringformat:"g" }}">
-        <input type="hidden" name="" id="id_a_longitude" value="{{ ride.end_loc.lng|stringformat:"g" }}">
-        <input type="hidden" name="" id="id_r_geometry" value="{{ geometry|default_if_none:"" }}">
+{% block content %}
+<div class="container mt-3">
+    <input type="hidden" name="" id="id_d_latitude" value="{{ ride.start_loc.lat|stringformat:" g" }}">
+    <input type="hidden" name="" id="id_d_longitude" value="{{ ride.start_loc.lng|stringformat:" g" }}">
+    <input type="hidden" name="" id="id_a_latitude" value="{{ ride.end_loc.lat|stringformat:" g" }}">
+    <input type="hidden" name="" id="id_a_longitude" value="{{ ride.end_loc.lng|stringformat:" g" }}">
+    <input type="hidden" name="" id="id_r_geometry" value="{{ geometry|default_if_none:"" }}">
 
+    {{ steps_json|json_script:"steps-data" }}
 
+    <div class="d-flex justify-content-between mb-2">
         <h1>{{ ride.start_dt|date:"l j F Y" }}</h1>
-        <div class="row">
-            <div class="col-xl-9">
-                <div class="card mb-3" style="background-color: #d2f4fa;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div class="d-grid">
-                                <div class="d-flex flex-row">
-                                    <div class="d-flex flex-column me-2 gap-1">
-                                        <span class="fw-semibold">{{ ride.start_dt|date:"H:i" }}</span>
-                                        <span class="text-muted small text-end">{{ ride.duration|duration }}</span>
-                                        <span class="fw-semibold">{{ ride.end_dt|date:"H:i" }}</span>
-                                    </div>
-                                    <div class="d-flex flex-column mx-1 my-1">
-                                        <div class="circle"></div>
-                                        <div class="line"></div>
-                                        <div class="circle"></div>
+        <div class="my-auto">
+            {% if perms.carpool.can_moderate_rides %}
+            <a href="{% url 'chat:mod_index' %}{% querystring ride=ride.pk %}" class="btn btn-primary">
+                Moderation
+            </a>
+            {% endif %}
+            {% if ride.driver == user %}
+            <a href="{% url 'carpool:edit' ride.pk %}" class="btn btn-outline-warning">{% translate "Edit" %}</a>
+            <a href="{% url 'carpool:delete' ride.pk %}" class="btn btn-outline-danger">{% translate "Delete" %}</a>
+            {% endif %}
+        </div>
 
-                                    </div>
-                                    <div class="d-flex flex-column ms-2">
-                                        <span>{{ ride.start_loc.fulltext }}</span>
-                                        <span class="h-100"></span>
-                                        <span>{{ ride.end_loc.fulltext }}</span>
-                                    </div>
+
+    </div>
+    <div class="row">
+        <div class="col-xl-9">
+            <div class="card mb-3" style="background-color: #d2f4fa;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div class="d-grid">
+                            <div class="d-flex flex-row">
+                                <div class="d-flex flex-column me-2 gap-1">
+                                    <span class="fw-semibold mb-auto">{{ ride.start_dt|date:"H:i" }}</span>
+                                    <span class="fw-semibold mt-auto">{{ ride.end_dt|date:"H:i" }}</span>
+                                </div>
+                                <div class="d-flex flex-column mx-1 my-1">
+                                    <div class="circle"></div>
+                                    <div class="line"></div>
+                                    {% for step in ride.steps.all %}
+                                    <div class="circle"></div>
+                                    <div class="line"></div>
+                                    {% endfor %}
+                                    <div class="circle"></div>
+                                </div>
+                                <div class="d-flex flex-column ms-2">
+                                    <span class="mb-auto">{{ ride.start_loc.fulltext }}</span>
+                                    {% for step in ride.steps.all %}
+                                    <span>{{ step.location.fulltext }}</span>
+                                    {% empty %}
+                                    <span class="h-100"></span>
+                                    {% endfor %}
+                                    <span class="mt-auto">{{ ride.end_loc.fulltext }}</span>
                                 </div>
                             </div>
                         </div>
+
+                        <span class="text-muted small text-end">{{ ride.duration|duration }}</span>
                     </div>
                 </div>
-                <div id="ride-map" style="height: 40vh"></div>
-                
-
-                {% if ride.comment %}
-                <div class="card my-3">
-                    <div class="card-body">
-                        {{ ride.comment }}
-                    </div>
-                </div>
-                {% endif %}
-
-
             </div>
-            <div class="col-xl-3">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <ul>
-				<li>{% translate "Seats available:" %} {{ ride.remaining_seats }} </li>
-                        </ul>
-                    </div>
-                    <div class="card-footer d-flex flex-row">
-                        <img src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
-                            class="rounded-circle" width="40" height="40" />
-                        <span class="ms-2 my-auto fw-semibold text-muted fs-5">{{ ride.driver }}</span>
-                    </div>
-                </div>
+            <div id="ride-map" style="height: 40vh"></div>
 
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex flex-row justify-content-between">
-                            <div class="fw-bold text-primary fs-2">
-                                {{ ride.price }} €
-                            </div>
-                            <div class="my-auto">
-                                {% if "CASH" in ride.payment_method %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
-                                    class="bi bi-piggy-bank-fill" viewBox="0 0 16 16" data-bs-toggle="tooltip" data-placement="top" title="{% translate 'Cash' %}">
+
+            {% if ride.comment %}
+            <div class="card my-3">
+                <div class="card-body">
+                    {{ ride.comment }}
+                </div>
+            </div>
+            {% endif %}
+
+
+        </div>
+        <div class="col-xl-3">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <ul>
+                        <li>{% translate "Seats available:" %} {{ ride.remaining_seats }} </li>
+                    </ul>
+                </div>
+                <div class="card-footer d-flex flex-row">
+                    <img src="https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"
+                        class="rounded-circle" width="40" height="40" />
+                    <span class="ms-2 my-auto fw-semibold text-muted fs-5">{{ ride.driver }}</span>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex flex-row justify-content-between">
+                        <div class="fw-bold text-primary fs-2">
+                            {{ ride.price }} €
+                        </div>
+                        <div class="my-auto">
+                            {% if "CASH" in ride.payment_method %}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
+                                class="bi bi-piggy-bank-fill" viewBox="0 0 16 16" data-bs-toggle="tooltip"
+                                data-placement="top" title="{% translate 'Cash' %}">
+                                <path
+                                    d="M7.964 1.527c-2.977 0-5.571 1.704-6.32 4.125h-.55A1 1 0 0 0 .11 6.824l.254 1.46a1.5 1.5 0 0 0 1.478 1.243h.263c.3.513.688.978 1.145 1.382l-.729 2.477a.5.5 0 0 0 .48.641h2a.5.5 0 0 0 .471-.332l.482-1.351c.635.173 1.31.267 2.011.267.707 0 1.388-.095 2.028-.272l.543 1.372a.5.5 0 0 0 .465.316h2a.5.5 0 0 0 .478-.645l-.761-2.506C13.81 9.895 14.5 8.559 14.5 7.069q0-.218-.02-.431c.261-.11.508-.266.705-.444.315.306.815.306.815-.417 0 .223-.5.223-.461-.026a1 1 0 0 0 .09-.255.7.7 0 0 0-.202-.645.58.58 0 0 0-.707-.098.74.74 0 0 0-.375.562c-.024.243.082.48.32.654a2 2 0 0 1-.259.153c-.534-2.664-3.284-4.595-6.442-4.595m7.173 3.876a.6.6 0 0 1-.098.21l-.044-.025c-.146-.09-.157-.175-.152-.223a.24.24 0 0 1 .117-.173c.049-.027.08-.021.113.012a.2.2 0 0 1 .064.199m-8.999-.65a.5.5 0 1 1-.276-.96A7.6 7.6 0 0 1 7.964 3.5c.763 0 1.497.11 2.18.315a.5.5 0 1 1-.287.958A6.6 6.6 0 0 0 7.964 4.5c-.64 0-1.255.09-1.826.254ZM5 6.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0" />
+                            </svg>
+                            {% endif %}
+                            {% if "WIRE" in ride.payment_method %}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
+                                class="bi bi-bank2" viewBox="0 0 16 16" data-bs-toggle="tooltip" data-placement="top"
+                                title="{% translate 'Wire transfer' %}">
+                                <path
+                                    d="M8.277.084a.5.5 0 0 0-.554 0l-7.5 5A.5.5 0 0 0 .5 6h1.875v7H1.5a.5.5 0 0 0 0 1h13a.5.5 0 1 0 0-1h-.875V6H15.5a.5.5 0 0 0 .277-.916zM12.375 6v7h-1.25V6zm-2.5 0v7h-1.25V6zm-2.5 0v7h-1.25V6zm-2.5 0v7h-1.25V6zM8 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2M.5 15a.5.5 0 0 0 0 1h15a.5.5 0 1 0 0-1z" />
+                            </svg>
+                            {% endif %}
+                            {% if "LYF" in ride.payment_method %}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 300 300"
+                                preserveAspectRatio="xMidYMid meet" style="vertical-align:middle;"
+                                data-bs-toggle="tooltip" data-placement="top" title="{% translate 'Lyf Pay' %}">
+                                <g transform="translate(0,300) scale(0.1,-0.1)" fill="#ff4e50" stroke="none">
                                     <path
-                                        d="M7.964 1.527c-2.977 0-5.571 1.704-6.32 4.125h-.55A1 1 0 0 0 .11 6.824l.254 1.46a1.5 1.5 0 0 0 1.478 1.243h.263c.3.513.688.978 1.145 1.382l-.729 2.477a.5.5 0 0 0 .48.641h2a.5.5 0 0 0 .471-.332l.482-1.351c.635.173 1.31.267 2.011.267.707 0 1.388-.095 2.028-.272l.543 1.372a.5.5 0 0 0 .465.316h2a.5.5 0 0 0 .478-.645l-.761-2.506C13.81 9.895 14.5 8.559 14.5 7.069q0-.218-.02-.431c.261-.11.508-.266.705-.444.315.306.815.306.815-.417 0 .223-.5.223-.461-.026a1 1 0 0 0 .09-.255.7.7 0 0 0-.202-.645.58.58 0 0 0-.707-.098.74.74 0 0 0-.375.562c-.024.243.082.48.32.654a2 2 0 0 1-.259.153c-.534-2.664-3.284-4.595-6.442-4.595m7.173 3.876a.6.6 0 0 1-.098.21l-.044-.025c-.146-.09-.157-.175-.152-.223a.24.24 0 0 1 .117-.173c.049-.027.08-.021.113.012a.2.2 0 0 1 .064.199m-8.999-.65a.5.5 0 1 1-.276-.96A7.6 7.6 0 0 1 7.964 3.5c.763 0 1.497.11 2.18.315a.5.5 0 1 1-.287.958A6.6 6.6 0 0 0 7.964 4.5c-.64 0-1.255.09-1.826.254ZM5 6.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0" />
-                                </svg>
-                                {% endif %}
-                                {% if "WIRE" in ride.payment_method %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor"
-                                    class="bi bi-bank2" viewBox="0 0 16 16" data-bs-toggle="tooltip" data-placement="top" title="{% translate 'Wire transfer' %}">
-                                    <path
-                                        d="M8.277.084a.5.5 0 0 0-.554 0l-7.5 5A.5.5 0 0 0 .5 6h1.875v7H1.5a.5.5 0 0 0 0 1h13a.5.5 0 1 0 0-1h-.875V6H15.5a.5.5 0 0 0 .277-.916zM12.375 6v7h-1.25V6zm-2.5 0v7h-1.25V6zm-2.5 0v7h-1.25V6zm-2.5 0v7h-1.25V6zM8 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2M.5 15a.5.5 0 0 0 0 1h15a.5.5 0 1 0 0-1z" />
-                                </svg>
-                                {% endif %}
-                                {% if "LYF" in ride.payment_method %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 300 300"
-                                    preserveAspectRatio="xMidYMid meet" style="vertical-align:middle;" data-bs-toggle="tooltip" data-placement="top" title="{% translate 'Lyf Pay' %}">
-                                    <g transform="translate(0,300) scale(0.1,-0.1)" fill="#ff4e50" stroke="none">
-                                        <path
-                                            d="M1280 2714 c-506 -92 -906 -495 -995 -1002 -19 -111 -19 -313 0 -424 90 -511 492 -913 1003 -1003 111 -19 313 -19 424 0 511 90 913 492 1003 1003 19 111 19 313 0 424 -90 511 -492 913 -1003 1003 -107 18 -328 18 -432 -1z m-500 -1064 l0 -370 160 0 161 0 19 -45 c11 -25 32 -61 46 -80 l26 -35 -286 0 -286 0 0 450 0 450 80 0 80 0 0 -370z m1508 335 l42 -20 -30 -63 c-26 -56 -32 -62 -49 -52 -11 5 -40 10 -65 10 -36 0 -48 -5 -65 -26 -12 -15 -21 -40 -21 -55 l0 -29 80 0 80 0 0 -80 0 -80 -80 0 -80 0 0 -235 0 -236 -82 3 -83 3 -3 233 -2 232 -45 0 -45 0 0 75 0 75 45 0 c44 0 45 1 45 33 0 85 46 171 114 213 36 22 50 25 121 22 52 -3 95 -11 123 -23z m-948 -421 c0 -149 3 -193 16 -219 40 -85 145 -95 214 -21 25 27 25 30 28 227 l3 199 85 0 85 0 -3 -322 c-3 -305 -4 -326 -24 -369 -29 -61 -85 -116 -151 -146 -50 -23 -64 -25 -156 -21 -105 5 -191 29 -238 67 l-22 18 26 57 c15 32 30 56 34 54 5 -2 35 -17 67 -32 147 -71 297 -28 321 93 l7 34 -33 -25 c-103 -76 -265 -61 -357 33 -73 74 -77 89 -80 337 l-3 222 90 0 91 0 0 -186z m999 -279 c32 -16 41 -33 41 -76 0 -42 -14 -64 -49 -79 -61 -25 -121 14 -121 78 0 74 63 112 129 77z" />
-                                    </g>
-                                </svg>
-                                {% endif %}
-                            </div>
+                                        d="M1280 2714 c-506 -92 -906 -495 -995 -1002 -19 -111 -19 -313 0 -424 90 -511 492 -913 1003 -1003 111 -19 313 -19 424 0 511 90 913 492 1003 1003 19 111 19 313 0 424 -90 511 -492 913 -1003 1003 -107 18 -328 18 -432 -1z m-500 -1064 l0 -370 160 0 161 0 19 -45 c11 -25 32 -61 46 -80 l26 -35 -286 0 -286 0 0 450 0 450 80 0 80 0 0 -370z m1508 335 l42 -20 -30 -63 c-26 -56 -32 -62 -49 -52 -11 5 -40 10 -65 10 -36 0 -48 -5 -65 -26 -12 -15 -21 -40 -21 -55 l0 -29 80 0 80 0 0 -80 0 -80 -80 0 -80 0 0 -235 0 -236 -82 3 -83 3 -3 233 -2 232 -45 0 -45 0 0 75 0 75 45 0 c44 0 45 1 45 33 0 85 46 171 114 213 36 22 50 25 121 22 52 -3 95 -11 123 -23z m-948 -421 c0 -149 3 -193 16 -219 40 -85 145 -95 214 -21 25 27 25 30 28 227 l3 199 85 0 85 0 -3 -322 c-3 -305 -4 -326 -24 -369 -29 -61 -85 -116 -151 -146 -50 -23 -64 -25 -156 -21 -105 5 -191 29 -238 67 l-22 18 26 57 c15 32 30 56 34 54 5 -2 35 -17 67 -32 147 -71 297 -28 321 93 l7 34 -33 -25 c-103 -76 -265 -61 -357 33 -73 74 -77 89 -80 337 l-3 222 90 0 91 0 0 -186z m999 -279 c32 -16 41 -33 41 -76 0 -42 -14 -64 -49 -79 -61 -25 -121 14 -121 78 0 74 63 112 129 77z" />
+                                </g>
+                            </svg>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-                {% if not ride.driver == user %}
-                    {% if not chat_request %}
-                        <form action="{% url 'carpool:chat' ride.pk %}" method="post">
-                            {% csrf_token %}
-                            <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
-                        </form>
-                    {% else %}
-                        <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">{% translate "See the discussion" %}</a>
-                    {% endif %}
-                {% else %}
-                <div class="d-flex flex-row gap-3">
-                    <a href="{% url 'carpool:edit' ride.pk %}" class="btn btn-warning w-100 my-auto">{% translate "Edit ride" %}</a>
-                    <a href="{% url 'carpool:delete' ride.pk %}" class="btn btn-danger w-100 my-auto">{% translate "Delete ride" %}</a>
-                </div>
-
-                {% endif %}
-                {% if  perms.chat.can_moderate_messages %}
-                <hr>
-                <a href="{% url 'chat:mod_index' %}{% querystring ride=ride.pk %}" class="btn btn-primary w-100">See requests for this ride</a>
-                {% endif %}
             </div>
-
+            {% if not ride.driver == user %}
+            {% if not chat_request %}
+            <form action="{% url 'carpool:chat' ride.pk %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
+            </form>
+            {% else %}
+            <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">
+                {% translate "See the discussion" %}
+            </a>
+            {% endif %}
+            {% endif %}
         </div>
+
+    </div>
     {% endblock %}
 
     {% block extrascript %}
@@ -182,18 +201,19 @@
         const arrivalLat = parseFloat(document.getElementById('id_a_latitude').value);
         const arrivalLng = parseFloat(document.getElementById('id_a_longitude').value);
         const r_geometry = document.getElementById('id_r_geometry').value;
-
-        const map = L.map('ride-map',
-            {
-
-            })
+        const steps_json = JSON.parse(document.getElementById('steps-data').textContent);
+        const map = L.map('ride-map', {})
 
         L.marker([departureLat, departureLng]).addTo(map)
         L.marker([arrivalLat, arrivalLng]).addTo(map)
 
+        steps_json.forEach(step => {
+            L.marker([step.lat, step.lng]).addTo(map)
+        });
+
         map.fitBounds([
             [departureLat, departureLng],
-            [arrivalLat, arrivalLng]
+            [arrivalLat, arrivalLng],
         ], {
             padding: [50, 50]
         });
