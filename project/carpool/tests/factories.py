@@ -28,7 +28,8 @@ class VehicleFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Vehicle
 
-    driver = factory.SubFactory("carpool.tests.factories.UserFactory")
+    # UserFactory is defined in the accounts app tests
+    driver = factory.SubFactory("accounts.tests.factories.UserFactory")
     seats = random.randint(1, 8)
     geqCO2_per_km = random.randint(50, 300)
     name = "default"
