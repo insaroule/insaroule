@@ -37,6 +37,18 @@ def create_step1(request):
             request.session["ride_step1"] = cleaned
             request.session.modified = True
             return redirect("carpool:create_step2")
+    else:
+        saved_data = request.session.get("ride_step1", None)
+        stopovers_data = request.session.get("stopover_data", None)
+
+        if saved_data:
+            form = CreateRideStep1Form(initial=saved_data)
+        else:
+            form = CreateRideStep1Form()
+        if stopovers_data:
+            formset = StopOverFormSet(initial=stopovers_data)
+        else:
+            formset = StopOverFormSet()
 
     context = {
         "form": form,

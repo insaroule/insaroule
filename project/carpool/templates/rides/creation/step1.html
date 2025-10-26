@@ -122,7 +122,9 @@
                 {{ formset.management_form }}
                 <div id="stopover_container">
                     {% for stopover_form in formset %}
-                        {{ form }}
+                        <div class="mb-1">
+                            {{ stopover_form }}
+                        </div>
                     {% endfor %}
                 </div>
 
@@ -508,21 +510,34 @@
         }
 
         // TODO: handle stopovers
-        
-        // const totalForms = document.getElementById("id_form-TOTAL_FORMS").value;
-        // console.log("Total stopover forms:", totalForms);
-        // for (let i = 0; i < totalForms; i++) {
-        //     const sLat = document.getElementById(`id_form-${i}-latitude`);
-        //     const sLng = document.getElementById(`id_form-${i}-longitude`);
-        //     const sFtx = document.getElementById(`id_form-${i}-fulltext`);
-        //     if (sLat && sLng && sFtx && sLat.value && sLng.value && sFtx.value) {
-        //         let marker = L.marker([sLat.value, sLng.value]).addTo(map);
-        //         markers[i + 1] = marker; // +1 because first marker is departure
-        //         const stopoverSelect = document.getElementById(`id_form-${i}-stopover`);
-        //         const stopoverWidget = initializeSearchAddressWidget(stopoverSelect);
-        //         stopoverWidget.setValue([sFtx.value]);
-        //     }
-        // }
+        const totalForms = document.getElementById("id_form-TOTAL_FORMS").value;
+        console.debug("Total stopover forms:", totalForms);
+        for (let i = 0; i < totalForms; i++) {
+            const sLat = document.getElementById(`id_form-${i}-latitude`);
+            const sLng = document.getElementById(`id_form-${i}-longitude`);
+            const sFtx = document.getElementById(`id_form-${i}-fulltext`);
+            if (sLat.value && sLng.value && sFtx.value) {
+                let marker = L.marker([sLat.value, sLng.value]).addTo(map);
+                markers[i + 1] = marker; // +1 because 0 is departure
+                // Create a select element 
+                const formDiv = document.createElement("div");
+                formDiv.classList.add("mb-1");
+                const stopoverContainer = document.getElementById("stopover_container");
+                stopoverContainer.appendChild(formDiv);
+
+                const stopoverSelect = document.createElement("select");
+
+                
+                stopoverSelect.classList.add("form-select");
+                stopoverSelect.id = `id_form-${i}-stopover`;
+                // Insert the select element into the form
+                formDiv.appendChild(stopoverSelect);
+
+                // Initialize Choices.js widget for the stopover select
+                const stopoverWidget = initializeSearchAddressWidget(stopoverSelect);
+                stopoverWidget.setValue([sFtx.value]);
+            }
+        }
 
 
         // Add existing route geometry if any
