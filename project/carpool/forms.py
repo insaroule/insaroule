@@ -40,6 +40,13 @@ class VehicleForm(forms.ModelForm):
             # set initial to empty string so widget doesn't render 'None'
             self.fields["geqCO2_per_km"].initial = ""
 
+    def clean_geqCO2_per_km(self):
+        """Convert empty string to None so the model receives a true NULL when unknown."""
+        val = self.cleaned_data.get("geqCO2_per_km")
+        if val in ("", None):
+            return None
+        return val
+
     class Meta:
         model = Vehicle
         fields = ["name", "description", "seats", "geqCO2_per_km"]
@@ -300,10 +307,26 @@ class EditRideForm(forms.Form):
             self.fields["a_latitude"].initial = ride.end_loc.lat
             self.fields["a_longitude"].initial = ride.end_loc.lng
 
-            # The duration was saved using the following command:
-            # datetime.timedelta(hours=form.cleaned_data["r_duration"])
-            self.fields["r_duration"].initial = ride.duration.total_seconds() / 3600
-            self.fields["r_geometry"].initial = ride.geometry.geojson
+            # Guard access: duration or geometry may be None for legacy rides/tests
+            if getattr(ride, "duration", None):
+                try:
+                    self.fields["r_duration"].initial = ride.duration.total_seconds() / 3600
+                except Exception:
+                    self.fields["r_duration"].initial = None
+            else:
+                self.fields["r_duration"].initial = None
+
+            # Guard access: geometry may be None for legacy rides/tests or
+            # accessing .geojson may raise on some geometry objects
+            try:
+                geom = getattr(ride, "geometry", None)
+                if geom is not None:
+                    # Use getattr for safety in case the object lacks geojson
+                    self.fields["r_geometry"].initial = getattr(geom, "geojson", "") or ""
+                else:
+                    self.fields["r_geometry"].initial = ""
+            except Exception:
+                self.fields["r_geometry"].initial = ""
 
             self.fields["departure_datetime"].initial = timezone.localtime(
                 ride.start_dt
