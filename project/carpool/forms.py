@@ -18,6 +18,34 @@ class VehicleForm(forms.ModelForm):
         min_value=1,
         max_value=MAXIMUM_SEATS_IN_VEHICLE,
     )
+    geqCO2_per_km = forms.IntegerField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(
+            attrs={
+                "placeholder": "",
+                "class": "form-control",
+            }
+        ),
+        help_text=(
+            "Number of grams of CO2 emitted per kilometer. Leave empty if unknown."
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If the instance has geqCO2_per_km set to None, show an empty string
+        instance = getattr(self, "instance", None)
+        if instance is not None and getattr(instance, "geqCO2_per_km", None) is None:
+            # set initial to empty string so widget doesn't render 'None'
+            self.fields["geqCO2_per_km"].initial = ""
+
+    def clean_geqCO2_per_km(self):
+        """Convert empty string to None so the model receives a true NULL when unknown."""
+        val = self.cleaned_data.get("geqCO2_per_km")
+        if val in ("", None):
+            return None
+        return val
 
     class Meta:
         model = Vehicle
@@ -279,16 +307,25 @@ class EditRideForm(forms.Form):
             self.fields["a_latitude"].initial = ride.end_loc.lat
             self.fields["a_longitude"].initial = ride.end_loc.lng
 
-            # The duration was saved using the following command:
-            # datetime.timedelta(hours=form.cleaned_data["r_duration"])
-            self.fields["r_duration"].initial = (
-                ride.duration.total_seconds() / 3600 if ride.duration else None
-            )
-            # ride.geometry may be None for older fixtures/factories — guard access
-            if getattr(ride, "geometry", None):
-                # geometry is a GEOS LineString
-                self.fields["r_geometry"].initial = ride.geometry.geojson
+            # Guard access: duration or geometry may be None for legacy rides/tests
+            if getattr(ride, "duration", None):
+                try:
+                    self.fields["r_duration"].initial = ride.duration.total_seconds() / 3600
+                except Exception:
+                    self.fields["r_duration"].initial = None
             else:
+                self.fields["r_duration"].initial = None
+
+            # Guard access: geometry may be None for legacy rides/tests or
+            # accessing .geojson may raise on some geometry objects
+            try:
+                geom = getattr(ride, "geometry", None)
+                if geom is not None:
+                    # Use getattr for safety in case the object lacks geojson
+                    self.fields["r_geometry"].initial = getattr(geom, "geojson", "") or ""
+                else:
+                    self.fields["r_geometry"].initial = ""
+            except Exception:
                 self.fields["r_geometry"].initial = ""
 
             self.fields["departure_datetime"].initial = timezone.localtime(
