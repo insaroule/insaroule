@@ -11,9 +11,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.geos import GEOSGeometry, Point
+from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
-from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Count, ExpressionWrapper, F, IntegerField
 from django.db.models.functions import TruncDate
@@ -25,8 +24,6 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_http_methods
 from carpool.templatetags.duration import duration
 
-from carpool.forms import CreateRideForm, EditRideForm
-from carpool.models import Location, Vehicle
 from carpool.models.reservation import Reservation
 from carpool.models.ride import Ride
 
@@ -214,27 +211,6 @@ def rides_detail(request, pk):
 
 
 @login_required
-def rides_edit(request, pk):
-    ride = get_object_or_404(Ride, pk=pk)
-    # Check if user has permission
-    if ride.driver != request.user:
-        return HttpResponse("You are not the driver of this ride", status=403)
-
-    form = EditRideForm(instance=ride)
-
-    if request.method == "POST":
-        form = EditRideForm(request.POST, instance=ride)
-        if form.is_valid():
-            form.save(ride)
-            messages.success(request, _("You successfully updated the ride."))
-            return redirect("carpool:detail", pk=ride.pk)
-
-    context = {"ride": ride, "geometry": ride.geometry.geojson, "form": form}
-
-    return render(request, "rides/edit.html", context)
-
-
-@login_required
 def rides_delete(request, pk):
     ride = get_object_or_404(Ride, pk=pk)
     # Check if user has permission
@@ -334,59 +310,3 @@ def rides_list(request):
         "querystring": querystring,
     }
     return render(request, "rides/list.html", context)
-
-
-@login_required
-def rides_create(request):
-    form = CreateRideForm()
-    if request.method == "POST":
-        form = CreateRideForm(request.POST)
-        if form.is_valid():
-            departure = Location.objects.get_or_create(
-                fulltext=form.cleaned_data["d_fulltext"],
-                street=form.cleaned_data["d_street"],
-                zipcode=form.cleaned_data["d_zipcode"],
-                city=form.cleaned_data["d_city"],
-                lat=form.cleaned_data["d_latitude"],
-                lng=form.cleaned_data["d_longitude"],
-            )[0]
-
-            arrival = Location.objects.get_or_create(
-                fulltext=form.cleaned_data["a_fulltext"],
-                street=form.cleaned_data["a_street"],
-                zipcode=form.cleaned_data["a_zipcode"],
-                city=form.cleaned_data["a_city"],
-                lat=form.cleaned_data["a_latitude"],
-                lng=form.cleaned_data["a_longitude"],
-            )[0]
-
-            vehicle = form.cleaned_data["vehicle"]
-            print(vehicle)
-
-            if vehicle and vehicle.driver != request.user:
-                raise PermissionDenied("You are not the driver of this vehicle")
-
-            vehicle = get_object_or_404(Vehicle, pk=vehicle.pk)
-
-            ride = Ride.objects.create(
-                driver=request.user,
-                start_dt=form.cleaned_data["departure_datetime"],
-                end_dt=form.cleaned_data["departure_datetime"]
-                + datetime.timedelta(hours=form.cleaned_data["r_duration"]),
-                start_loc=departure,
-                seats_offered=form.cleaned_data["seats_offered"],
-                vehicle=vehicle,
-                end_loc=arrival,
-                payment_method=form.cleaned_data["payment_method"],
-                price=form.cleaned_data["price_per_seat"],
-                geometry=GEOSGeometry(form.cleaned_data["r_geometry"], srid=4326),
-                duration=datetime.timedelta(hours=form.cleaned_data["r_duration"]),
-                comment=form.cleaned_data["comment"],
-            )
-            return redirect("carpool:detail", pk=ride.pk)
-
-    context = {
-        "form": form,
-        "payment_methods": Ride.PaymentMethod.choices,
-    }
-    return render(request, "rides/create.html", context)

@@ -21,7 +21,6 @@ app_name = "carpool"
 urlpatterns = [
     path("", rides_list, name="list"),
     path("my-rides/", list_my_rides, name="my-rides"),
-    # path("create/", rides_create, name="create"), # Deprecated in favor of multi-step creation (will need to be removed later)
     path("<uuid:pk>/", rides_detail, name="detail"),
     path("<uuid:pk>/delete/", rides_delete, name="delete"),
     path("map/", rides_map, name="map"),

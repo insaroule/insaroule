@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 import logging
-from carpool.forms import VehicleForm
+from carpool.forms.vehicle import VehicleForm
 from carpool.models import Vehicle
 
 
