@@ -2,11 +2,16 @@ import logging
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.timezone import timedelta, datetime
+from django.contrib import messages
+from django.utils.translation import gettext as _
+from carpool.forms import EditRideForm
+from carpool.forms import StopOverFormSet
 
-from carpool.forms import CreateRideStep1Form, CreateRideStep2Form, StopOverFormSet
+from carpool.forms import CreateRideStep1Form, CreateRideStep2Form
 from carpool.models import Location, Step
 from carpool.models.ride import Ride
 
@@ -135,3 +140,33 @@ def create_step2(request):
         "payment_methods": Ride.PaymentMethod.choices,
     }
     return render(request, "rides/creation/step2.html", context)
+
+
+@login_required
+def edit(request, pk):
+    ride = get_object_or_404(Ride, pk=pk)
+    # Check if user has permission
+    if ride.driver != request.user:
+        return HttpResponse("You are not the driver of this ride", status=403)
+
+    form = EditRideForm(
+        instance=ride,
+    )
+
+    if request.method == "POST":
+        form = EditRideForm(request.POST, instance=ride)
+        if form.is_valid():
+            print(request.POST)
+            form.save(ride)
+            messages.success(request, _("You successfully updated the ride."))
+            return redirect("carpool:detail", pk=ride.pk)
+
+    context = {
+        "ride": ride,
+        "geometry": ride.geometry.geojson,
+        "form": form,
+        # "formset": fosrmset,
+        "payment_methods": Ride.PaymentMethod.choices,
+    }
+
+    return render(request, "rides/edit.html", context)

@@ -7,7 +7,6 @@ from carpool.views import (
     rides_map,
     rides_delete,
     rides_detail,
-    rides_edit,
     rides_list,
     rides_subscribe,
 )
@@ -24,7 +23,6 @@ urlpatterns = [
     path("my-rides/", list_my_rides, name="my-rides"),
     # path("create/", rides_create, name="create"), # Deprecated in favor of multi-step creation (will need to be removed later)
     path("<uuid:pk>/", rides_detail, name="detail"),
-    path("<uuid:pk>/edit/", rides_edit, name="edit"),
     path("<uuid:pk>/delete/", rides_delete, name="delete"),
     path("map/", rides_map, name="map"),
     path("<uuid:ride_pk>/chat/", request_chat, name="chat"),
@@ -32,6 +30,7 @@ urlpatterns = [
 ]
 
 urlpatterns += [
+    path("<uuid:pk>/edit/", rides_views.edit, name="edit"),
     path("create/step1/", rides_views.create_step1, name="create_step1"),
     path("create/step2/", rides_views.create_step2, name="create_step2"),
 ]
