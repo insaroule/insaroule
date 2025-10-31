@@ -2,29 +2,31 @@ import logging
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.utils.timezone import timedelta, datetime
+from django.contrib import messages
+from django.utils.translation import gettext as _
 
-from carpool.forms import CreateRideStep1Form, CreateRideStep2Form, StopOverFormSet
-from carpool.models import Location, Step
+from carpool.forms.ride import CreateRideStep1Form, CreateRideStep2Form, EditRideForm
+from carpool.models import Step
 from carpool.models.ride import Ride
+from carpool.utils import get_or_create_location
 
 
 @login_required
 def create_step1(request):
+    """First step of the ride creation process"""
     form = CreateRideStep1Form()
-    formset = StopOverFormSet()
 
     if request.method == "POST":
-        print(request.POST)
         form = CreateRideStep1Form(request.POST)
-        formset = StopOverFormSet(request.POST)
-
-        if form.is_valid() and formset.is_valid():
-            # Store form data in session
+        if form.is_valid():
             cleaned = form.cleaned_data.copy()
+
             cleaned["departure"] = form.departure.cleaned_data
+            cleaned["stopovers"] = form.stopovers.cleaned_data.copy()
             cleaned["arrival"] = form.arrival.cleaned_data
 
             # Convert datetime to string
@@ -33,26 +35,18 @@ def create_step1(request):
                     "departure_datetime"
                 ].isoformat()
 
-            request.session["stopover_data"] = formset.cleaned_data
             request.session["ride_step1"] = cleaned
             request.session.modified = True
             return redirect("carpool:create_step2")
-    else:
-        saved_data = request.session.get("ride_step1", None)
-        stopovers_data = request.session.get("stopover_data", None)
-
-        if saved_data:
-            form = CreateRideStep1Form(initial=saved_data)
-        else:
-            form = CreateRideStep1Form()
-        if stopovers_data:
-            formset = StopOverFormSet(initial=stopovers_data)
-        else:
-            formset = StopOverFormSet()
+    # else:
+    #     saved_data = request.session.get("ride_step1", None)
+    #     if saved_data:
+    #         form = CreateRideStep1Form(initial=saved_data)
+    #     else:
+    #         form = CreateRideStep1Form()
 
     context = {
         "form": form,
-        "formset": formset,
     }
     return render(request, "rides/creation/step1.html", context)
 
@@ -60,7 +54,6 @@ def create_step1(request):
 @login_required
 def create_step2(request):
     step1_data = request.session.get("ride_step1", None)
-    stepover_data = request.session.get("stopover_data", None)
 
     if not step1_data:
         logging.info("Step 1 data not found in session, redirecting to step 1")
@@ -72,23 +65,10 @@ def create_step2(request):
         if form.is_valid():
             # Create or get locations
             d_data = step1_data.pop("departure")
-            departure = Location.objects.get_or_create(
-                fulltext=d_data["fulltext"],
-                street=d_data["street"],
-                zipcode=d_data["zipcode"],
-                city=d_data["city"],
-                lat=d_data["latitude"],
-                lng=d_data["longitude"],
-            )[0]
+            departure = get_or_create_location(d_data)
             a_data = step1_data.pop("arrival")
-            arrival = Location.objects.get_or_create(
-                fulltext=a_data["fulltext"],
-                street=a_data["street"],
-                zipcode=a_data["zipcode"],
-                city=a_data["city"],
-                lat=a_data["latitude"],
-                lng=a_data["longitude"],
-            )[0]
+            arrival = get_or_create_location(a_data)
+            stopovers_data = step1_data.pop("stopovers", [])
 
             # Compute datetime and geometry fields
             start_dt = datetime.fromisoformat(step1_data.pop("departure_datetime"))
@@ -108,15 +88,8 @@ def create_step2(request):
             ride = Ride.objects.create(**ride_data)
 
             # Handle stopovers
-            for index, stepover in enumerate(stepover_data):
-                so_location = Location.objects.get_or_create(
-                    fulltext=stepover["fulltext"],
-                    street=stepover["street"],
-                    zipcode=stepover["zipcode"],
-                    city=stepover["city"],
-                    lat=stepover["latitude"],
-                    lng=stepover["longitude"],
-                )[0]
+            for index, stepover in enumerate(stopovers_data):
+                so_location = get_or_create_location(stepover)
                 step = Step.objects.create(
                     order=index + 1,
                     location=so_location,
@@ -127,7 +100,7 @@ def create_step2(request):
 
     context = {
         "step1_data": request.session.get("ride_step1", {}),
-        "stepover_data": stepover_data,
+        "stepover_data": step1_data.get("stopovers", []),
         "form": form,
         "departure_datetime": timezone.datetime.fromisoformat(
             step1_data["departure_datetime"]
@@ -135,3 +108,33 @@ def create_step2(request):
         "payment_methods": Ride.PaymentMethod.choices,
     }
     return render(request, "rides/creation/step2.html", context)
+
+
+@login_required
+def edit(request, pk):
+    ride = get_object_or_404(Ride, pk=pk)
+    # Check if user has permission
+    if ride.driver != request.user:
+        raise PermissionDenied("You do not have permission to edit this ride.")
+
+    form = EditRideForm(
+        instance=ride,
+    )
+
+    if request.method == "POST":
+        form = EditRideForm(request.POST, instance=ride)
+        if form.is_valid():
+            print(request.POST)
+            form.save(ride)
+            messages.success(request, _("You successfully updated the ride."))
+            return redirect("carpool:detail", pk=ride.pk)
+
+    context = {
+        "ride": ride,
+        "geometry": ride.geometry.geojson,
+        "form": form,
+        # "formset": fosrmset,
+        "payment_methods": Ride.PaymentMethod.choices,
+    }
+
+    return render(request, "rides/edit.html", context)

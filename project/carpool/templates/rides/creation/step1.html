@@ -42,13 +42,13 @@
 <div class="container my-3">
     <!-- Empty form for formset -->
     <div id="empty_form" style="display: none;">
-        <input type="hidden" name="form-__prefix__-fulltext" id="id_form-__prefix__-fulltext">
-        <input type="hidden" name="form-__prefix__-street" id="id_form-__prefix__-street">
-        <input type="hidden" name="form-__prefix__-zipcode" id="id_form-__prefix__-zipcode">
-        <input type="hidden" name="form-__prefix__-city" id="id_form-__prefix__-city">
-        <input type="hidden" name="form-__prefix__-latitude" id="id_form-__prefix__-latitude">
-        <input type="hidden" name="form-__prefix__-longitude" id="id_form-__prefix__-longitude">
-        <select class="form-select" id="id_form-__prefix__-stopover"></select>
+        <input type="hidden" name="stopovers-__prefix__-fulltext" id="id_stopovers-__prefix__-fulltext">
+        <input type="hidden" name="stopovers-__prefix__-street" id="id_stopovers-__prefix__-street">
+        <input type="hidden" name="stopovers-__prefix__-zipcode" id="id_stopovers-__prefix__-zipcode">
+        <input type="hidden" name="stopovers-__prefix__-city" id="id_stopovers-__prefix__-city">
+        <input type="hidden" name="stopovers-__prefix__-latitude" id="id_stopovers-__prefix__-latitude">
+        <input type="hidden" name="stopovers-__prefix__-longitude" id="id_stopovers-__prefix__-longitude">
+        <select class="form-select" id="id_stopovers-__prefix__-stopover"></select>
     </div>
 
 
@@ -119,11 +119,11 @@
                     </div>
                 </div>
 
-                {{ formset.management_form }}
+                {{ form.stopovers.management_form }}
                 <div id="stopover_container">
-                    {% for stopover_form in formset %}
+                    {% for so_form in form.stopovers %}
                         <div class="mb-1">
-                            {{ stopover_form }}
+                            {{ so_form }}
                         </div>
                     {% endfor %}
                 </div>
@@ -321,9 +321,9 @@
         // ********************************************************
         el.addEventListener("change", function () {
             // Get associated hidden inputs based on the select element's ID
-            // If the ID starts with "id_form-", it's a stopover
+            // If the ID starts with "id_stopovers-", it's a stopover
             // Otherwise, it's either "departure" or "arrival"
-            const prefix = this.id.startsWith("id_form-")
+            const prefix = this.id.startsWith("id_stopovers-")
                 ? this.id.replace("id_", "").replace("-stopover", "")
                 : this.id === "departure"
                     ? "departure"
@@ -374,7 +374,7 @@
             }
 
             // for stopovers, insert markers in between departure and arrival
-            if (this.id.startsWith("id_form-")) {
+            if (this.id.startsWith("id_stopovers-")) {
                 const index = parseInt(this.id.split("-")[1]);
 
                 if (!markers[index + 1]) {
@@ -413,8 +413,8 @@
     const addFormBtn = document.getElementById("addStopoverButton");
     const deleteFormBtn = document.getElementById("deleteStopoverButton");
 
-    const maximumFormCount = document.getElementById("id_form-MAX_NUM_FORMS");
-    const currentFormCount = document.getElementById("id_form-TOTAL_FORMS");
+    const maximumFormCount = document.getElementById("id_stopovers-MAX_NUM_FORMS");
+    const currentFormCount = document.getElementById("id_stopovers-TOTAL_FORMS");
 
     addFormBtn.addEventListener("click", function () {
 
@@ -435,7 +435,7 @@
         stopoverContainer.appendChild(newFormDiv);
 
         const stopoverSelect = newFormDiv.querySelector(
-            `#id_form-${currentFormCount.value - 1}-stopover`,
+            `#id_stopovers-${currentFormCount.value - 1}-stopover`,
         );
 
         // Initialize Choices.js widget for the new stopover select
@@ -485,8 +485,6 @@
 </script>
 
 <script>
-
-
     document.addEventListener("DOMContentLoaded", function () {
         markers = [null, null, null, null, null, null, null];
         const dLat = document.getElementById("id_departure-latitude");
@@ -510,12 +508,12 @@
         }
 
         // TODO: handle stopovers
-        const totalForms = document.getElementById("id_form-TOTAL_FORMS").value;
+        const totalForms = document.getElementById("id_stopovers-TOTAL_FORMS").value;
         console.debug("Total stopover forms:", totalForms);
         for (let i = 0; i < totalForms; i++) {
-            const sLat = document.getElementById(`id_form-${i}-latitude`);
-            const sLng = document.getElementById(`id_form-${i}-longitude`);
-            const sFtx = document.getElementById(`id_form-${i}-fulltext`);
+            const sLat = document.getElementById(`id_stopovers-${i}-latitude`);
+            const sLng = document.getElementById(`id_stopovers-${i}-longitude`);
+            const sFtx = document.getElementById(`id_stopovers-${i}-fulltext`);
             if (sLat.value && sLng.value && sFtx.value) {
                 let marker = L.marker([sLat.value, sLng.value]).addTo(map);
                 markers[i + 1] = marker; // +1 because 0 is departure
@@ -529,7 +527,7 @@
 
                 
                 stopoverSelect.classList.add("form-select");
-                stopoverSelect.id = `id_form-${i}-stopover`;
+                stopoverSelect.id = `id_stopovers-${i}-stopover`;
                 // Insert the select element into the form
                 formDiv.appendChild(stopoverSelect);
 
