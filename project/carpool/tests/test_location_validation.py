@@ -5,7 +5,6 @@ from django.utils import timezone
 from accounts.tests.factories import UserFactory
 from carpool.tests.factories import LocationFactory, VehicleFactory, RideFactory
 from carpool.forms import CreateRideForm, EditRideForm
-from carpool.models.ride import Ride
 
 
 class LocationValidationTestCase(TestCase):
@@ -42,39 +41,46 @@ class LocationValidationTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("a_fulltext", form.errors)
 
-    def test_edit_ride_form_rejects_identical_locations(self):
-        start = LocationFactory(lat=self.lat, lng=self.lng)
-        end = LocationFactory()
-        ride = RideFactory(start_loc=start, end_loc=end, vehicle=self.vehicle, driver=self.user)
 
-        data = {
-            "d_fulltext": start.fulltext,
-            "d_street": start.street,
-            "d_zipcode": start.zipcode,
-            "d_city": start.city,
-            "d_latitude": start.lat,
-            "d_longitude": start.lng,
-            "a_fulltext": start.fulltext,
-            "a_street": start.street,
-            "a_zipcode": start.zipcode,
-            "a_city": start.city,
-            "a_latitude": start.lat,
-            "a_longitude": start.lng,
-            "r_geometry": ride.geometry.geojson if ride.geometry else "LINESTRING(2.3522 48.8566, 2.3522 48.8566)",
-            "r_duration": 1,
-            "departure_datetime": timezone.now() + timezone.timedelta(days=1),
-            "seats": 2,
-            "price_per_seat": 0,
-        }
+def test_edit_ride_form_rejects_identical_locations(self):
+    start = LocationFactory(lat=self.lat, lng=self.lng)
+    end = LocationFactory()
+    ride = RideFactory(
+        start_loc=start, end_loc=end, vehicle=self.vehicle, driver=self.user
+    )
 
-        form = EditRideForm(data=data, instance=ride)
-        self.assertFalse(form.is_valid())
-        self.assertIn("a_fulltext", form.errors)
+    data = {
+        "departure-fulltext": start.fulltext,
+        "departure-street": start.street,
+        "departure-zipcode": start.zipcode,
+        "departure-city": start.city,
+        "departure-latitude": start.lat,
+        "departure-longitude": start.lng,
+        "arrival-fulltext": start.fulltext,
+        "arrival-street": start.street,
+        "arrival-zipcode": start.zipcode,
+        "arrival-city": start.city,
+        "arrival-latitude": start.lat,
+        "arrival-longitude": start.lng,
+        "geometry": ride.geometry.geojson
+        if ride.geometry
+        else "LINESTRING(2.3522 48.8566, 2.3522 48.8566)",
+        "duration": 1,
+        "start_dt": timezone.now() + timezone.timedelta(days=1),
+        "seats_offered": 2,
+        "price": 0,
+    }
+
+    form = EditRideForm(data=data, instance=ride)
+    self.assertFalse(form.is_valid())
+    self.assertIn("arrival", form.errors)
 
     def test_ride_model_clean_rejects_identical_locations(self):
         start = LocationFactory(lat=self.lat, lng=self.lng)
         end = LocationFactory(lat=self.lat, lng=self.lng)
-        ride = RideFactory(start_loc=start, end_loc=end, vehicle=self.vehicle, driver=self.user)
+        ride = RideFactory(
+            start_loc=start, end_loc=end, vehicle=self.vehicle, driver=self.user
+        )
 
         with self.assertRaises(ValidationError):
             ride.clean()
