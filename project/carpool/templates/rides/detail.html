@@ -173,7 +173,9 @@
                 </div>
             </div>
             {% if not ride.driver == user %}
-            {% if not chat_request %}
+            {% if ride.has_ended %}
+                <p class="alert alert-warning">Ride has been completed.</p>
+            {% elif not chat_request %}
             <form action="{% url 'carpool:chat' ride.pk %}" method="post">
                 {% csrf_token %}
                 <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
