@@ -238,6 +238,7 @@
 
 {% block extrascript %}
 {% if user.is_authenticated %}
+<script src="{% static 'js/widgets.js' %}"></script>
 <script src="{% static 'vendors/choices-js/public/assets/scripts/choices.min.js' %}"></script>
 
 <script>
@@ -385,6 +386,9 @@
         hArrivalLatLng.value = aLatLng;
     }
 
+    // Set date constraints for the date picker
+    const startDtEl = document.getElementById('start_dt');
+    setDateConstraints(startDtEl);
 </script>
 {% endif %}
 {% endblock extrascript %}

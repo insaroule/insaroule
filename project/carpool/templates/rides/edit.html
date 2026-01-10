@@ -60,6 +60,9 @@
                 <div class="mb-3">
                     <label for="{{ form.start_dt.id_for_label }}">{{ form.start_dt.label }}</label>
                     {{ form.start_dt }}
+                    {% if form.start_dt.errors %}
+                    <span class="text-danger">{{ form.start_dt.errors }}</span>
+                    {% endif %}
                 </div>
 
 

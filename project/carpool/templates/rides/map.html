@@ -71,6 +71,7 @@
 {% endblock %}
 
 {{ rides_geo|json_script:"rides-geo-data" }}
+<script src="{% static 'js/widgets.js' %}"></script>
 <script>
   const layers = [];
   let activeRoute = null;
@@ -90,7 +91,9 @@
     '#aaffc3', '#808000', '#545474', '#000075', '#808080'
   ];
 
-  document.getElementById('start_dt').addEventListener('change', function () {
+  const startDtEl = document.getElementById('start_dt');
+
+  startDtEl.addEventListener('change', function () {
     const selectedDate = this.value;
     clearMap();
     const filtered = rides.filter(ride => {
@@ -99,6 +102,7 @@
     });        
     displayRides(filtered);
   });
+  setDateConstraints(startDtEl);
 
   async function displayRides(rides) {
     const localBounds = [];

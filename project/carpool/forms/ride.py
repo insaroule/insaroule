@@ -44,6 +44,7 @@ class EditRideForm(forms.ModelForm):
                 attrs={
                     "type": "datetime-local",
                     "min": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+                    "max": (timezone.now() + datetime.timedelta(days=365)).strftime("%Y-%m-%dT%H:%M"),
                 }
             ),
             "comment": forms.Textarea(attrs={"rows": 2}),
@@ -133,6 +134,10 @@ class EditRideForm(forms.ModelForm):
         self.fields["geometry"].initial = (
             self.instance.geometry.geojson if self.instance.geometry else ""
         )
+        now = timezone.now().strftime("%Y-%m-%dT%H:%M")
+        self.fields["start_dt"].widget.attrs["min"] = now
+        one_year_from_now = (timezone.now() + datetime.timedelta(days=365)).strftime("%Y-%m-%dT%H:%M")
+        self.fields["start_dt"].widget.attrs["max"] = one_year_from_now
 
     def clean_duration(self):
         hours = self.cleaned_data.get("duration")
@@ -147,6 +152,14 @@ class EditRideForm(forms.ModelForm):
         data = self.cleaned_data["geometry"]
         if isinstance(data, str):
             return GEOSGeometry(data)
+        return data
+
+    def clean_start_dt(self):
+        data = self.cleaned_data["start_dt"]
+        if data < timezone.now():
+            self.add_error("start_dt", _("Departure date cannot be in the past."))
+        if data > timezone.now() + datetime.timedelta(days=365):
+            self.add_error("start_dt", _("Departure date cannot be more than one year in the future."))
         return data
 
     def is_valid(self):
@@ -202,6 +215,7 @@ class CreateRideStep1Form(forms.Form):
                 "type": "datetime-local",
                 "class": "form-control",
                 "min": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+                "max": (timezone.now() + datetime.timedelta(days=365)).strftime("%Y-%m-%dT%H:%M"),
             },
         ),
     )
@@ -231,7 +245,16 @@ class CreateRideStep1Form(forms.Form):
                 _("Departure and arrival locations cannot be the same."),
             )
 
-        return cleaned_data
+        if "departure_datetime" in cleaned_data:
+            data = cleaned_data["departure_datetime"]
+            # check if too late or before now
+            if data < timezone.now():
+                self.add_error("departure_datetime", _("Departure date cannot be in the past."))
+            elif data > timezone.now() + datetime.timedelta(days=365):
+                self.add_error(
+                    "departure_datetime",
+                    _("Departure date cannot be more than one year in the future."),
+                )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -256,6 +279,8 @@ class CreateRideStep1Form(forms.Form):
 
         now = timezone.now().strftime("%Y-%m-%dT%H:%M")
         self.fields["departure_datetime"].widget.attrs["min"] = now
+        one_year_from_now = (timezone.now() + datetime.timedelta(days=365)).strftime("%Y-%m-%dT%H:%M")
+        self.fields["departure_datetime"].widget.attrs["max"] = one_year_from_now
 
 
 class CreateRideStep2Form(forms.Form):
