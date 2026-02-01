@@ -29,4 +29,8 @@ app.conf.beat_schedule = {
         "task": "carpool.tasks.compute_daily_statistics",  # Every day at 5:00 AM
         "schedule": crontab(hour=5, minute=0),
     },
+    "delete-non-verified-accounts": {
+        "task": "accounts.tasks.delete_non_verified_accounts",  # Every day at 6:00 AM
+        "schedule": crontab(hour=6, minute=0),
+    },
 }

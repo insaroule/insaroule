@@ -9,6 +9,8 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext as _
+from django.utils import timezone
+from datetime import timedelta
 from celery.utils.log import get_task_logger
 
 
@@ -194,3 +196,18 @@ def send_forgot_username_email(
     email.send()
 
     logger.info(f"Sent forgot_username email to {to_email}.")
+
+
+@shared_task
+def delete_non_verified_accounts():
+    """
+    Delete the accounts whose email has not been verified for two weeks.
+    """
+    logger.info("Deleting accounts whose email has not been verified for two weeks.")
+
+    for user in get_user_model().objects.all():
+        if not user.email_verified:
+            max_non_verified_time = timedelta(weeks=2)
+            if timezone.now() - user.date_joined > max_non_verified_time:
+                user.delete()
+                logger.info("One account deleted.")
