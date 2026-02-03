@@ -398,6 +398,9 @@
             selectedOption.dataset.description || "";
         vehicleSeatsInput.value = selectedOption.dataset.seats || "";
         vehicleCO2Input.value = selectedOption.dataset.co2 || "";
+        if (selectedOption.dataset.co2 == "None" || selectedOption.dataset.co2 == "null") {
+            vehicleCO2Input.value = ""
+        }
 
         vehicleModal.show();
     }
