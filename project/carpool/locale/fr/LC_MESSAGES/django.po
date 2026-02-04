@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-03 00:04+0100\n"
+"POT-Creation-Date: 2026-02-03 22:34+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -531,8 +531,8 @@ msgstr "Rechercher une adresse de départ"
 #: carpool/templates/rides/create.html:287
 #: carpool/templates/rides/create.html:292
 #: carpool/templates/rides/creation/step1.html:287
-#: carpool/templates/rides/edit.html:323 carpool/templates/rides/list.html:266
-#: carpool/templates/rides/list.html:273
+#: carpool/templates/rides/edit.html:323 carpool/templates/rides/list.html:267
+#: carpool/templates/rides/list.html:275
 msgid "No address found"
 msgstr "Aucune adresse trouvée"
 
@@ -588,7 +588,8 @@ msgid "Next step"
 msgstr "Étape suivante"
 
 #: carpool/templates/rides/creation/step1.html:285
-#: carpool/templates/rides/edit.html:321
+#: carpool/templates/rides/edit.html:321 carpool/templates/rides/list.html:265
+#: carpool/templates/rides/list.html:273
 msgid "Press to select"
 msgstr "Appuyez pour sélectionner"
 
@@ -785,11 +786,11 @@ msgid "Consider taking the train or posting the first ride on the platform."
 msgstr ""
 "Considérez prendre le train ou publier un nouveau trajet sur la plateforme."
 
-#: carpool/templates/rides/list.html:265
+#: carpool/templates/rides/list.html:266
 msgid "Search for an address of departure"
 msgstr "Rechercher une adresse de départ"
 
-#: carpool/templates/rides/list.html:272
+#: carpool/templates/rides/list.html:274
 msgid "Search for an address of arrival"
 msgstr "Rechercher une adresse d'arrivée"
 

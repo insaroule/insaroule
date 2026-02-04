@@ -262,6 +262,7 @@
     const departure = new Choices(departureEl, {
         removeItemButton: true,
         placeholder: true,
+        itemSelectText: "{% translate 'Press to select' %}",
         placeholderValue: "{% translate 'Search for an address of departure' %}",
         noChoicesText: "{% translate 'No address found' %}",
 
@@ -269,6 +270,7 @@
     const arrival = new Choices(arrivalEl, {
         removeItemButton: true,
         placeholder: true,
+        itemSelectText: "{% translate 'Press to select' %}",
         placeholderValue: "{% translate 'Search for an address of arrival' %}",
         noChoicesText: "{% translate 'No address found' %}",
     })
