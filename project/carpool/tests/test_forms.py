@@ -119,60 +119,62 @@ class CreateRideStep1FormTestCase(TestCase):
         self.assertTrue(form.is_valid())
 
     def test_reject_datetime_in_the_past(self):
-        # In the past date
-        start_dt = (timezone.now() - datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
-        data = {
-            "stopovers-TOTAL_FORMS": "0",
-            "stopovers-INITIAL_FORMS": "0",
-            "stopovers-MIN_NUM_FORMS": "0",
-            "stopovers-MAX_NUM_FORMS": "5",
-            "r_geometry": "LINESTRING(0 0, 1 1)",
-            "r_duration": 1.0,
-            "departure_datetime": start_dt,
-        }
-        data.update(
-            {
-                f"departure-{k}": v
-                for k, v in self._valid_location_data(self.loc1).items()
+        with override_language("en"):
+            # In the past date
+            start_dt = (timezone.now() - datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
+            data = {
+                "stopovers-TOTAL_FORMS": "0",
+                "stopovers-INITIAL_FORMS": "0",
+                "stopovers-MIN_NUM_FORMS": "0",
+                "stopovers-MAX_NUM_FORMS": "5",
+                "r_geometry": "LINESTRING(0 0, 1 1)",
+                "r_duration": 1.0,
+                "departure_datetime": start_dt,
             }
-        )
-        data.update(
-            {f"arrival-{k}": v for k, v in self._valid_location_data(self.loc2).items()}
-        )
+            data.update(
+                {
+                    f"departure-{k}": v
+                    for k, v in self._valid_location_data(self.loc1).items()
+                }
+            )
+            data.update(
+                {f"arrival-{k}": v for k, v in self._valid_location_data(self.loc2).items()}
+            )
 
-        form = CreateRideStep1Form(data)
-        # Should not be valid
-        self.assertFalse(form.is_valid())
-        self.assertIn("departure_datetime", form.errors)
-        self.assertIn("in the past", form.errors["departure_datetime"][0])
+            form = CreateRideStep1Form(data)
+            # Should not be valid
+            self.assertFalse(form.is_valid())
+            self.assertIn("departure_datetime", form.errors)
+            self.assertIn("in the past", form.errors["departure_datetime"][0])
 
     def test_reject_datetime_more_than_a_year_in_the_future(self):
-        # One year from now in the future
-        start_dt = (timezone.now() + datetime.timedelta(days=366)).strftime("%Y-%m-%dT%H:%M")
-        data = {
-            "stopovers-TOTAL_FORMS": "0",
-            "stopovers-INITIAL_FORMS": "0",
-            "stopovers-MIN_NUM_FORMS": "0",
-            "stopovers-MAX_NUM_FORMS": "5",
-            "r_geometry": "LINESTRING(0 0, 1 1)",
-            "r_duration": 1.0,
-            "departure_datetime": start_dt,
-        }
-        data.update(
-            {
-                f"departure-{k}": v
-                for k, v in self._valid_location_data(self.loc1).items()
+        with override_language("en"):
+            # One year from now in the future
+            start_dt = (timezone.now() + datetime.timedelta(days=366)).strftime("%Y-%m-%dT%H:%M")
+            data = {
+                "stopovers-TOTAL_FORMS": "0",
+                "stopovers-INITIAL_FORMS": "0",
+                "stopovers-MIN_NUM_FORMS": "0",
+                "stopovers-MAX_NUM_FORMS": "5",
+                "r_geometry": "LINESTRING(0 0, 1 1)",
+                "r_duration": 1.0,
+                "departure_datetime": start_dt,
             }
-        )
-        data.update(
-            {f"arrival-{k}": v for k, v in self._valid_location_data(self.loc2).items()}
-        )
+            data.update(
+                {
+                    f"departure-{k}": v
+                    for k, v in self._valid_location_data(self.loc1).items()
+                }
+            )
+            data.update(
+                {f"arrival-{k}": v for k, v in self._valid_location_data(self.loc2).items()}
+            )
 
-        form = CreateRideStep1Form(data)
-        # Should not be valid
-        self.assertFalse(form.is_valid())
-        self.assertIn("departure_datetime", form.errors)
-        self.assertIn("one year in the future", form.errors["departure_datetime"][0])
+            form = CreateRideStep1Form(data)
+            # Should not be valid
+            self.assertFalse(form.is_valid())
+            self.assertIn("departure_datetime", form.errors)
+            self.assertIn("one year in the future", form.errors["departure_datetime"][0])
 
 class CreateRideStep2FormTestCase(TestCase):
     def setUp(self):
