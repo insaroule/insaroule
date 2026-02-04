@@ -23,8 +23,8 @@
     <main class="flex-shrink-0">
         {% include 'includes/navbar.html' %}
         {% block content %}{% endblock %}
-        {% include 'messages/container.html' %}
     </main>
+    {% include 'messages/container.html' %}
     <script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"
         integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
         crossorigin="anonymous"></script>
