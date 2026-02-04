@@ -57,19 +57,23 @@ def get_autocompletion(query):
             geocoding_results = data["results"]
             if geocoding_results:
                 for geocoding_result in geocoding_results:
-                    result.append(
-                        {
-                            "fulltext": geocoding_result["fulltext"],
-                            "value": f"{geocoding_result['y']}/{geocoding_result['x']}",
-                            "customProperties": {
-                                "street": geocoding_result.get("street", ""),
-                                "city": geocoding_result.get("city", ""),
-                                "zipcode": geocoding_result.get("zipcode", ""),
-                                "latitude": geocoding_result["x"],
-                                "longitude": geocoding_result["y"],
-                            },
+                    content =  {
+                        "fulltext": geocoding_result["fulltext"],
+                        "value": f"{geocoding_result['y']}/{geocoding_result['x']}",
+                        "customProperties": {
+                            "street": geocoding_result.get("street", ""),
+                            "city": geocoding_result.get("city", ""),
+                            "zipcode": geocoding_result.get("zipcode", ""),
+                            "latitude": geocoding_result["x"],
+                            "longitude": geocoding_result["y"],
                         },
-                    )
+                    }
+
+                    # Prioritize exact city results matching the query
+                    if geocoding_result.get("street", "") == "" and geocoding_result.get("city", "").lower().startswith(query.lower()):
+                        result.insert(0, content)
+                    else:
+                        result.append(content)
     return result
 
 
