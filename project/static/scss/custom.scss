@@ -1,0 +1,17 @@
+// Required
+@import "../vendors/bootstrap/scss/functions";
+
+// Default variable overrides
+$primary: #A649C0;
+$warning: #F5C630;
+$blue: #319DEE;
+
+// Required
+@import "../vendors/bootstrap/scss/variables";
+@import "../vendors/bootstrap/scss/variables-dark";
+@import "../vendors/bootstrap/scss/maps";
+@import "../vendors/bootstrap/scss/mixins";
+@import "../vendors/bootstrap/scss/root";
+
+// Import required Bootstrap components or entire Bootstrap
+@import "../vendors/bootstrap/scss/bootstrap";

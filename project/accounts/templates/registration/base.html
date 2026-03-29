@@ -8,8 +8,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>INSA'Roule</title>
-    <link href="{% static 'vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"
-        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" crossorigin="anonymous"
+        integrity="sha384-G4KEWhGxVZ6yJoUM5hYH3asxRGZUsmbzA5jb+ylYDP5SFoNwWyjwoH2ydhMkx5px">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'favicon-32x32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'favicon-16x16.png' %}">
@@ -36,9 +36,7 @@
     </main>
     {% include "includes/footer.html" %}
 
-    <script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}"
-        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
-        crossorigin="anonymous"></script>
+    <script src="{% static 'vendors/bootstrap/js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
     {% block extrascript %}{% endblock %}
 </body>
 
