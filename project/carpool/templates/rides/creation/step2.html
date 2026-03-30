@@ -185,6 +185,10 @@
 <script src="{% static 'vendors/leaflet/leaflet.js' %}" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
 <script>
+    var defaultIcon = L.icon({
+        iconUrl: '{% static "img/marker-icon.png" %}',
+        iconAnchor: [12, 41],
+    });
     var map = L.map("map", {
         doubleClickZoom: false,
         boxZoom: false,
@@ -241,7 +245,7 @@
             // If departure coordinates are set, create the marker
             const lat = step1_data.departure.latitude;
             const lng = step1_data.departure.longitude;
-            departureM = L.marker([lat, lng]).addTo(map);
+            departureM = L.marker([lat, lng], { icon: defaultIcon }).addTo(map);
             updateMap();
         }
         // FIXME: if hArrivalLatitude and hArrivalLongitude are undefined
@@ -253,7 +257,7 @@
             // If arrival coordinates are set, create the marker
             const lat = step1_data.arrival.latitude;
             const lng = step1_data.arrival.longitude;
-            arrivalM = L.marker([lat, lng]).addTo(map);
+            arrivalM = L.marker([lat, lng], { icon: defaultIcon }).addTo(map);
             updateMap();
         }
 
@@ -266,7 +270,7 @@
                 ) {
                     const lat = stopover.latitude;
                     const lng = stopover.longitude;
-                    L.marker([lat, lng]).addTo(map);
+                    L.marker([lat, lng], { icon: defaultIcon }).addTo(map);
                 }
             });
             updateMap();
@@ -277,7 +281,7 @@
             const routeData = JSON.parse(step1_data.r_geometry);
             route = L.geoJSON(routeData, {
                 style: {
-                    color: "#3388ff",
+                    color: window.getComputedStyle(document.documentElement).getPropertyValue('--bs-primary'),
                     weight: 5,
                     opacity: 0.7,
                 },

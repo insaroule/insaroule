@@ -6,17 +6,17 @@
 <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.min.css' %}">
 <div class="card mb-2 text-bg-light map-filter-card">
     <div class="card-body">
-      <form method="get" action="">
-        <label for="start_dt" class="form-label">Date</label>
-        <div class="input-group">
-          <input type="date" id="start_dt" name="start_dt" class="form-control" required>
-          <button type="button" id="reset-date" class="btn btn-outline-secondary" title="Reset">
-            <i class="bi bi-arrow-clockwise"></i>
-          </button>
-        </div>
-      </form>
+        <form method="get" action="">
+            <label for="start_dt" class="form-label">Date</label>
+            <div class="input-group">
+                <input type="date" id="start_dt" name="start_dt" class="form-control" required>
+                <button type="button" id="reset-date" class="btn btn-outline-secondary" title="Reset">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </form>
     </div>
-  </div>
+</div>
 <div id="map" style="height: 87.5vh;"></div>
 
 <style>
@@ -59,97 +59,95 @@
 </div>
 
 {% block extrahead %}
-    <link
-        rel="stylesheet"
-        href="{% static 'vendors/leaflet/leaflet.css' %}"
-    />
-    <script
-        src="{% static 'vendors/leaflet/leaflet.js' %}"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""
-    ></script>
+<link rel="stylesheet" href="{% static 'vendors/leaflet/leaflet.css' %}" />
+<script src="{% static 'vendors/leaflet/leaflet.js' %}" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
 {% endblock %}
 
 {{ rides_geo|json_script:"rides-geo-data" }}
 <script src="{% static 'js/widgets.js' %}"></script>
 <script>
-  const layers = [];
-  let activeRoute = null;
-
-  const rides = JSON.parse(document.getElementById("rides-geo-data").textContent);
-
-  const map = L.map("map").setView([46.5, 2.5], 6);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap",
-  }).addTo(map);
-
-  const allBounds = [];
-  const colors = [
-    '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-    '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#641d1d',
-    '#008080', '#e6beff', '#9a6324', '#2E2D22', '#800000',
-    '#aaffc3', '#808000', '#545474', '#000075', '#808080'
-  ];
-
-  const startDtEl = document.getElementById('start_dt');
-
-  startDtEl.addEventListener('change', function () {
-    const selectedDate = this.value;
-    clearMap();
-    const filtered = rides.filter(ride => {
-        const rideDate = new Date(ride.start_dt).toISOString().split('T')[0];
-        return rideDate === selectedDate;
-    });        
-    displayRides(filtered);
-  });
-  setDateConstraints(startDtEl);
-
-  async function displayRides(rides) {
-    const localBounds = [];
-
-    var index = 0;
-    rides.forEach(ride => {
-        const color = colors[(index) % colors.length]; 
-
-        // Ajouter les marqueurs
-        const startMarker = L.marker(ride.start).addTo(map).bindPopup("Start: " + ride.start_name);
-        const endMarker = L.marker(ride.end).addTo(map).bindPopup("Destination: " + ride.end_name);
-        layers.push(startMarker, endMarker);
-
-        // Tracer la route
-        const route = L.geoJSON(ride.geometry, {
-            style: {
-                color: color,
-                weight: 4,
-                opacity: 0.6
-            }
-        }).addTo(map);
-
-        layers.push(route);
-
-        route.on('click', () => {
-            if (activeRoute && map.hasLayer(activeRoute)) {
-                activeRoute.setStyle({ weight: 4, opacity: 0.6 });
-            }
-
-            activeRoute = route;
-
-            showRideInfo(route, ride, color);
-            route.setStyle({ weight: 6, opacity: 0.9 });
-            map.fitBounds(route.getBounds(), { padding: [50, 50] });
-        });
-
-        const bounds = route.getBounds();
-        if (bounds.isValid()) {
-            allBounds.push(bounds);
-        }
-        index++;
+    var defaultIcon = L.icon({
+        iconUrl: '{% static "img/marker-icon.png" %}',
+        iconAnchor: [12, 41],
     });
-    updateMapBounds(allBounds);
+    const layers = [];
+    let activeRoute = null;
 
-  }
+    const rides = JSON.parse(document.getElementById("rides-geo-data").textContent);
 
-  function updateMapBounds(bounds) {
+    const map = L.map("map").setView([46.5, 2.5], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+    }).addTo(map);
+
+    const allBounds = [];
+    const colors = [
+        '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+        '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#641d1d',
+        '#008080', '#e6beff', '#9a6324', '#2E2D22', '#800000',
+        '#aaffc3', '#808000', '#545474', '#000075', '#808080'
+    ];
+
+    const startDtEl = document.getElementById('start_dt');
+
+    startDtEl.addEventListener('change', function () {
+        const selectedDate = this.value;
+        clearMap();
+        const filtered = rides.filter(ride => {
+            const rideDate = new Date(ride.start_dt).toISOString().split('T')[0];
+            return rideDate === selectedDate;
+        });
+        displayRides(filtered);
+    });
+    setDateConstraints(startDtEl);
+
+    async function displayRides(rides) {
+        const localBounds = [];
+
+        var index = 0;
+        rides.forEach(ride => {
+            const color = colors[(index) % colors.length];
+
+            // Ajouter les marqueurs
+            const startMarker = L.marker(ride.start, { icon: defaultIcon }).addTo(map).bindPopup("Start: " + ride.start_name);
+            const endMarker = L.marker(ride.end, { icon: defaultIcon }).addTo(map).bindPopup("Destination: " + ride.end_name);
+            layers.push(startMarker, endMarker);
+
+            // Tracer la route
+            const route = L.geoJSON(ride.geometry, {
+                style: {
+                    color: color,
+                    weight: 4,
+                    opacity: 0.6
+                }
+            }).addTo(map);
+
+            layers.push(route);
+
+            route.on('click', () => {
+                if (activeRoute && map.hasLayer(activeRoute)) {
+                    activeRoute.setStyle({ weight: 4, opacity: 0.6 });
+                }
+
+                activeRoute = route;
+
+                showRideInfo(route, ride, color);
+                route.setStyle({ weight: 6, opacity: 0.9 });
+                map.fitBounds(route.getBounds(), { padding: [50, 50] });
+            });
+
+            const bounds = route.getBounds();
+            if (bounds.isValid()) {
+                allBounds.push(bounds);
+            }
+            index++;
+        });
+        updateMapBounds(allBounds);
+
+    }
+
+    function updateMapBounds(bounds) {
         if (!bounds || bounds.length === 0) return;
 
         let fullBounds = bounds[0];
@@ -165,20 +163,20 @@
     }
 
 
-  function showRideInfo(route, ride, color) {
-        
-    const card = document.getElementById('ride-info-card');
-    const details = document.getElementById('ride-details');
-    
-    console.debug(ride.start_dt);
+    function showRideInfo(route, ride, color) {
 
-    const startDate = new Date(ride.start_dt);
-    const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const optionsTime = { hour: '2-digit', minute: '2-digit' };
-    const start_d = startDate.toLocaleDateString("{{ LANGUAGE_CODE }}", optionsDate);
-    const start_t = startDate.toLocaleTimeString("{{ LANGUAGE_CODE }}", optionsTime);
+        const card = document.getElementById('ride-info-card');
+        const details = document.getElementById('ride-details');
 
-    details.innerHTML = `
+        console.debug(ride.start_dt);
+
+        const startDate = new Date(ride.start_dt);
+        const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const optionsTime = { hour: '2-digit', minute: '2-digit' };
+        const start_d = startDate.toLocaleDateString("{{ LANGUAGE_CODE }}", optionsDate);
+        const start_t = startDate.toLocaleTimeString("{{ LANGUAGE_CODE }}", optionsTime);
+
+        details.innerHTML = `
         <button id="close-info" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
         <p><strong>${start_d}</strong></p>
         <p><strong>{% translate "Start:" %}</strong> ${ride.start_name}</p>
@@ -190,33 +188,33 @@
             <a href="/${ride.uuid}/" class="btn btn-primary">{% translate "See more" %}</a>
         </div>
     `;
-    
 
-    document.getElementById('close-info').addEventListener('click', () => {
-        card.style.display = 'none';
-        route.setStyle({ weight: 4, opacity: 0.6 });
-        activeRoute = null;
-        displayRides(rides);
+
+        document.getElementById('close-info').addEventListener('click', () => {
+            card.style.display = 'none';
+            route.setStyle({ weight: 4, opacity: 0.6 });
+            activeRoute = null;
+            displayRides(rides);
         });
 
-    card.style.borderLeft = `5px solid ${color}`;
-    card.style.display = 'block';
-  }
+        card.style.borderLeft = `5px solid ${color}`;
+        card.style.display = 'block';
+    }
 
-  function clearMap() {
-    layers.forEach(layer => {
-        map.removeLayer(layer);
+    function clearMap() {
+        layers.forEach(layer => {
+            map.removeLayer(layer);
+        });
+        layers.length = 0;
+    }
+
+    document.getElementById('reset-date').addEventListener('click', () => {
+        document.getElementById('start_dt').value = '';
+        clearMap();
+        displayRides(rides);
     });
-    layers.length = 0;
-  }
 
-  document.getElementById('reset-date').addEventListener('click', () => {
-    document.getElementById('start_dt').value = '';
-    clearMap();
     displayRides(rides);
-  });
-
-  displayRides(rides);
 </script>
 
 {% endblock %}

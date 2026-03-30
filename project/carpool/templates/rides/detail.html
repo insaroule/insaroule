@@ -161,7 +161,8 @@
                             {% endif %}
                             {% if "LYDIA" in ride.payment_method %}
                             <svg width="50" height="15" viewBox="0 0 110 33" fill="none"
-                                xmlns="http://www.w3.org/2000/svg" data-bs-toggle="tooltip" data-placement="top" title="{% translate 'Lydia' %}">
+                                xmlns="http://www.w3.org/2000/svg" data-bs-toggle="tooltip" data-placement="top"
+                                title="{% translate 'Lydia' %}">
                                 <circle cx="15.9993" cy="16.0003" r="15.7576" fill="#0180FF" />
                                 <path
                                     d="M55.2243 26.4546H41.8619V5.43398H46.337V22.5152H55.2243V26.4546ZM54.7745 32.411L55.3732 28.8182C55.7199 28.9758 56.2557 29.0703 56.6339 29.0703C57.6739 29.0703 58.3672 28.7867 58.7454 27.9673L59.3126 26.6752L53.1357 11.2328H57.4217L61.3926 21.8219L65.3636 11.2328H69.6811L62.5272 28.9443C61.3926 31.8122 59.3757 32.5685 56.7599 32.6316C56.2872 32.6316 55.2787 32.537 54.7745 32.411ZM84.7043 26.4546H80.6703V24.5007C79.4727 26.0134 77.8024 26.8328 75.9746 26.8328C72.1297 26.8328 69.2303 23.9334 69.2303 18.8594C69.2303 13.88 72.0982 10.8546 75.9746 10.8546C77.7709 10.8546 79.4727 11.6425 80.6703 13.1867V5.43398H84.7043V26.4546ZM77.2036 23.2716C78.5588 23.2716 80.0085 22.5467 80.6703 21.5382V16.1491C80.0085 15.1406 78.5588 14.4158 77.2036 14.4158C74.9346 14.4158 73.3588 16.2122 73.3588 18.8594C73.3588 21.4752 74.9346 23.2716 77.2036 23.2716ZM89.398 9.59398C88.1059 9.59398 87.0029 8.52247 87.0029 7.19883C87.0029 5.87519 88.1059 4.83519 89.398 4.83519C90.7217 4.83519 91.7932 5.87519 91.7932 7.19883C91.7932 8.52247 90.7217 9.59398 89.398 9.59398ZM91.415 26.4546H87.4126V11.2328H91.415V26.4546ZM107.265 26.4546H103.262V24.8788C102.222 26.1079 100.426 26.8328 98.4407 26.8328C96.014 26.8328 93.1461 25.194 93.1461 21.7903C93.1461 18.2291 96.014 16.874 98.4407 16.874C100.458 16.874 102.254 17.5358 103.262 18.7334V16.6849C103.262 15.1406 101.939 14.1322 99.9219 14.1322C98.2831 14.1322 96.7704 14.731 95.4783 15.9285L93.9655 13.2497C95.8249 11.611 98.2201 10.8546 100.615 10.8546C104.082 10.8546 107.265 12.2413 107.265 16.6219V26.4546ZM100.048 24.1225C101.34 24.1225 102.601 23.6813 103.262 22.7988V20.9079C102.601 20.0255 101.34 19.5843 100.048 19.5843C98.4722 19.5843 97.1801 20.4037 97.1801 21.8849C97.1801 23.3031 98.4722 24.1225 100.048 24.1225Z"
@@ -174,21 +175,21 @@
             </div>
             {% if not ride.driver == user %}
             {% if ride.has_ended %}
-                <p class="alert alert-warning">{% translate 'Ride has been completed.' %}</p>
+            <p class="alert alert-warning">{% translate 'Ride has been completed.' %}</p>
             {% else %}
-                {% if ride.is_full %}
-                    <p class="alert alert-danger">{% translate 'Ride is full.' %}</p>
-                {% endif %}
-                {% if not chat_request %}
-                    <form action="{% url 'carpool:chat' ride.pk %}" method="post">
-                        {% csrf_token %}
-                        <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
-                    </form>
-                {% else %}
-                    <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">
-                        {% translate "See the discussion" %}
-                    </a>
-                {% endif %}
+            {% if ride.is_full %}
+            <p class="alert alert-danger">{% translate 'Ride is full.' %}</p>
+            {% endif %}
+            {% if not chat_request %}
+            <form action="{% url 'carpool:chat' ride.pk %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-primary w-100" type="submit">{% translate "Start a discussion" %}</button>
+            </form>
+            {% else %}
+            <a href="{{ chat_request.get_room_url }}" class="btn btn-info w-100">
+                {% translate "See the discussion" %}
+            </a>
+            {% endif %}
             {% endif %}
             {% endif %}
         </div>
@@ -220,11 +221,16 @@
         const steps_json = JSON.parse(document.getElementById('steps-data').textContent);
         const map = L.map('ride-map', {})
 
-        L.marker([departureLat, departureLng]).addTo(map)
-        L.marker([arrivalLat, arrivalLng]).addTo(map)
+        var defaultIcon = L.icon({
+            iconUrl: '{% static "img/marker-icon.png" %}',
+            iconAnchor: [12, 41],
+        })
+
+        L.marker([departureLat, departureLng], { icon: defaultIcon }).addTo(map)
+        L.marker([arrivalLat, arrivalLng], { icon: defaultIcon }).addTo(map)
 
         steps_json.forEach(step => {
-            L.marker([step.lat, step.lng]).addTo(map)
+            L.marker([step.lat, step.lng], { icon: defaultIcon }).addTo(map)
         });
 
         map.fitBounds([
@@ -236,7 +242,7 @@
 
         route = L.geoJSON(JSON.parse(r_geometry), {
             style: {
-                color: '#3388ff',
+                color: window.getComputedStyle(document.documentElement).getPropertyValue('--bs-primary'),
                 weight: 5,
                 opacity: 0.7
             }
