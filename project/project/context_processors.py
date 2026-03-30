@@ -7,4 +7,5 @@ def constants(request):
         "TERMS_OF_SERVICE": settings.TERMS_OF_SERVICE,
         "PRIVACY_POLICY": settings.PRIVACY_POLICY,
         "LEGAL_NOTICE": settings.LEGAL_NOTICE,
+        "OSM_TILES_URL": settings.OSM_TILES_URL,
     }

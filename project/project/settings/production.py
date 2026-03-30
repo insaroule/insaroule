@@ -304,3 +304,10 @@ MAXIMUM_STEPOVERS_IN_RIDE = 5
 MAX_DAYS_NON_VERIFIED_ACCOUNT = env.int(
     "MAX_DAYS_NON_VERIFIED_ACCOUNT", default=14
 )  # 2 weeks
+
+
+# Openstreetmap tiles URL, can be overridden in .env file to use a custom tile server
+# to use caches and reduce load on public tile servers.
+# Default is the standard OpenStreetMap tile server, which has usage policies that must be respected:
+# https://operations.osmfoundation.org/policies/tiles/
+OSM_TILES_URL = env("OSM_TILES_URL", default="https://tile.openstreetmap.org")
