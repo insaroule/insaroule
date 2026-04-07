@@ -115,8 +115,10 @@
             card.className = `card bg-light`;
         }
         card.style.maxWidth = '75%';
-        card.dataset.originalMessage = msg.message;
+        card.dataset.originalMessage = msg.content;
         card.dataset.messageId = msg.id;
+
+        console.debug("Handling message", card);
 
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body pt-2 pb-0 px-3';
@@ -124,10 +126,10 @@
         const messageText = document.createElement('p');
         messageText.className = 'mb-0';
         if (!msg.hidden) {
-            messageText.textContent = msg.message;
+            messageText.textContent = msg.content;
         } else {
             // add <s></s> tags around the message text
-            messageText.innerHTML = "<s>" + msg.message + "</s>";
+            messageText.innerHTML = "<s>" + msg.content + "</s>";
         }
 
         cardBody.appendChild(messageText);

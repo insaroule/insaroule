@@ -277,6 +277,7 @@
 
     function hideMessage(messageId) {
         // Hide the message element
+        console.debug("Hiding message with id", messageId);
         const messageEl = document.querySelector('.card[data-message-id="' + messageId + '"]');
         messageEl.querySelector('.card-body p').textContent = "This message has been removed.";
     }
@@ -317,7 +318,7 @@
 
         const messageText = document.createElement('p');
         messageText.className = 'mb-1';
-        messageText.textContent = msg.message;
+        messageText.textContent = msg.content;
 
         const timestamp = document.createElement('div');
         timestamp.className = `text-end small ${isCurrentUser ? 'text-light' : 'text-muted'}`;
@@ -346,7 +347,7 @@
 
     chatSocket.onmessage = function (e) {
         const msg = JSON.parse(e.data);
-        console.debug(msg);
+        console.debug("Websocket received message", msg);
 
         if (msg.type === 'chat.action') {
             handleAction(msg);
