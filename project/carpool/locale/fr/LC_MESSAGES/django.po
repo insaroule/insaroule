@@ -880,6 +880,10 @@ msgstr ""
 "Vous ne pouvez pas supprimer ce trajet car il a des passagers et n'est pas "
 "encore terminé."
 
+#: carpool/views/rides.py:67
+msgid "You must choose a vehicle."
+msgstr "Vous devez choisir un véhicule."
+
 #: carpool/views/rides.py:129
 msgid "You successfully updated the ride."
 msgstr "Vous avez mis à jour le trajet avec succès."

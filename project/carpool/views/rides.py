@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.utils.translation import gettext as _
 
 from carpool.forms.ride import CreateRideStep1Form, CreateRideStep2Form, EditRideForm
-from carpool.models import Step
+from carpool.models import Step, Vehicle
 from carpool.models.ride import Ride
 from carpool.utils import get_or_create_location
 
@@ -62,6 +62,8 @@ def create_step2(request):
     form = CreateRideStep2Form()
     if request.method == "POST":
         form = CreateRideStep2Form(request.POST)
+        if Vehicle.objects.get_queryset().count() == 0:
+            messages.error(request, _("You must choose a vehicle."))
         if form.is_valid():
             # Create or get locations
             d_data = step1_data.pop("departure")
