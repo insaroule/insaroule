@@ -23,7 +23,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "coverage[toml]>=7.10.1",
-    "daphne>=4.2.1",
+    "daphne>=4.2.2",
     "django-debug-toolbar>=6.3.0",
     "factory-boy>=3.3.3",
     "poethepoet>=0.37.0",
